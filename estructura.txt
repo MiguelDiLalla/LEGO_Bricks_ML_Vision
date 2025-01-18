@@ -34,9 +34,11 @@ LEGO_Bricks_ML_Vision/
             refs/
                 heads/
                     main
+                    organize_project_structure
                 remotes/
                     origin/
                         main
+                        organize_project_structure
         objects/
             02/
                 572135631ce86afcb9fc929ce73bfacfb96666
@@ -44,6 +46,8 @@ LEGO_Bricks_ML_Vision/
                 18c01bb04a22f1210248873e76b9dccf55f5f8
             0d/
                 b4ca4b4d25d68a4497220353592645ca4f71bf
+            19/
+                bc4ccd65bc18a1e444fc22e5bf9900045a7075
             1c/
                 12cc864f5cd46d874836a9a0270ba3929775f1
             24/
@@ -54,6 +58,10 @@ LEGO_Bricks_ML_Vision/
                 cf2b3ca792842dde3ee5754f2f98e2c151ed64
             2b/
                 9c92ac7544c98c9254b783621d376d8f039ff9
+            34/
+                e3e4533ba4312c0761f8f2d3acab5d6eaf087f
+            4f/
+                c92d65005e7afbca72cb777e199720264a4690
             55/
                 fd809e1eb81a8f14a135ae4a06a91721d1be56
             5f/
@@ -89,9 +97,11 @@ LEGO_Bricks_ML_Vision/
         refs/
             heads/
                 main
+                organize_project_structure
             remotes/
                 origin/
                     main
+                    organize_project_structure
             tags/
     data/
         annotations/
@@ -18433,6 +18443,7 @@ LEGO_Bricks_ML_Vision/
         final/
     notebooks/
         LEGO_Bricks_Project_Miguel_Di_Lalla.ipynb
+        Refurbishing_Project_doc.ipynb
         Utilities_dev.ipynb
     presentation/
     results/
