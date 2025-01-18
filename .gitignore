@@ -1,0 +1,46 @@
+# Ignorar todo en la carpeta data excepto anotaciones si es necesario.
+data/*
+!data/annotations/*
+
+# Ignorar entornos virtuales
+.env/
+*.env
+
+# Ignorar archivos temporales de Python
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+
+# Ignorar archivos de logs
+*.log
+logs/
+
+# Ignorar archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Ignorar archivos generados por el sistema de construcción
+*.egg-info/
+*.egg
+build/
+dist/
+
+# Ignorar archivos de notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignorar outputs y carpetas de resultados temporales
+results/
+output/
+
+# Ignorar configuraciones locales de IDE
+.vscode/
+.idea/
+
+# Ignorar carpetas ocultas y otros archivos temporales
+*.bak
+*.swp
+*.tmp
+
+# Ignorar el PDF generado si no es parte del código fuente
+*.pdf
