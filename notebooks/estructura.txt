@@ -18454,6 +18454,7 @@ LEGO_Bricks_ML_Vision/
             YOLO_LegoBrick_Detectron_v0.pt
         final/
     notebooks/
+        estructura.txt
         LEGO_Bricks_Project_Miguel_Di_Lalla.ipynb
         Refurbishing_Project_doc.ipynb
         Utilities_dev.ipynb
