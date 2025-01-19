@@ -61,14 +61,19 @@ LEGO_Bricks_ML_Vision/
                 cf2b3ca792842dde3ee5754f2f98e2c151ed64
             2b/
                 9c92ac7544c98c9254b783621d376d8f039ff9
+            2e/
+                59a556776a4ccc078cdae58f29f8fd9fc02a1b
             31/
                 2988e4552a89c7e117ee564591e6af3160778b
             32/
+                cb0ef43658ea12e444e53b56e681d991c873c4
                 ee2838d81a2469060b3268f67909bbc6b8377d
             34/
                 e3e4533ba4312c0761f8f2d3acab5d6eaf087f
             3e/
                 6eb433804fdaae43d5f790046a2eb59726eefc
+            45/
+                2ea29f9d0271e0433a48dc47ccce7c714aca87
             4f/
                 c92d65005e7afbca72cb777e199720264a4690
             55/
@@ -87,12 +92,27 @@ LEGO_Bricks_ML_Vision/
                 1502ee113547b0f822203aeb39c02782e83902
             7d/
                 5993d5a1a5621260a90edc2226e042b08b0ab9
+                f8211eafbdc50c03c7786ba88717ad4d166999
             86/
                 9ccbed6540232eb52342aa566ad5fdfbd7bc87
+            8c/
+                1d355a96c39e8c0c118058b4ee28f465483060
             8d/
                 ade157cd188688da60d524ce3510dd1d3e71c6
+            98/
+                cb218f5133cee5e7b5cac5aa8e8fd5791a0a63
+            9e/
+                5f3d06d35d442e3fd4a8260e166ecd69c664de
             a0/
                 7570cfe5d8158a6a96abcc9a2c908d51b72608
+            ab/
+                23185f183ecd89c5c6db9374043a9b9de76e68
+            af/
+                18ad98135d90f30285ea12054d0838d3c81430
+            b5/
+                a94fe85e22a88e66750a938097651ea4fae1db
+            bc/
+                4e8afc19b1b85684561c67400dff0a9e31bb87
             bf/
                 ca577db3da803974d64746cdd1976b38b99cc4
             c5/
@@ -103,6 +123,8 @@ LEGO_Bricks_ML_Vision/
                 6880cd366d2c94e5f1425b4f9fdaf6163d9923
             e7/
                 d67437dcd1dcee0339754d20c0dd2b25cdc85b
+            f2/
+                73fe5144f4b7b1e2bfd65c4a89ce4595bb4751
             info/
             pack/
         refs/
@@ -18454,6 +18476,7 @@ LEGO_Bricks_ML_Vision/
             YOLO_LegoBrick_Detectron_v0.pt
         final/
     notebooks/
+        estructura.txt
         LEGO_Bricks_Project_Miguel_Di_Lalla.ipynb
         Refurbishing_Project_doc.ipynb
         Utilities_dev.ipynb
