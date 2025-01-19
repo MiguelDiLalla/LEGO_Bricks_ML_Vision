@@ -1,28 +1,36 @@
-# Importaciones estándar de Python
 import os
 import random
-
-# Importaciones de librerías externas
+import logging
 import matplotlib.pyplot as plt
 from PIL import Image
-
-# Importaciones locales del proyecto
 from scripts.pipeline import test_model_on_real_images
 
-# Crear grids de muestras del dataset
-def create_dataset_grid(input_folder, output_folder, grid_size=(3, 3)):
-    """
-    Genera un grid de imágenes de muestra del dataset y las guarda en la carpeta especificada.
+# Configuración del logger
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-    Parameters:
-    - input_folder (str): Ruta de la carpeta con las imágenes de entrada.
-    - output_folder (str): Ruta donde se guardará el grid generado.
-    - grid_size (tuple): Dimensiones del grid (filas, columnas).
+def create_dataset_grid(input_folder: str, output_folder: str, grid_size=(3, 3)) -> None:
     """
+    Genera un grid de imágenes de muestra del dataset y lo guarda en la carpeta especificada.
+
+    Args:
+        input_folder (str): Ruta de la carpeta con las imágenes de entrada.
+        output_folder (str): Ruta donde se guardará el grid generado.
+        grid_size (tuple): Dimensiones del grid (filas, columnas).
+
+    Raises:
+        FileNotFoundError: Si la carpeta de entrada no existe o está vacía.
+    """
+    if not os.path.exists(input_folder):
+        logging.error("La carpeta de entrada no existe.")
+        raise FileNotFoundError("Carpeta de entrada no encontrada.")
+
     os.makedirs(output_folder, exist_ok=True)
     image_files = [f for f in os.listdir(input_folder) if f.endswith(('.jpg', '.png'))]
+    if not image_files:
+        logging.error("No se encontraron imágenes en la carpeta de entrada.")
+        raise FileNotFoundError("No se encontraron imágenes en la carpeta de entrada.")
+
     random.shuffle(image_files)
-    
     selected_files = image_files[:grid_size[0] * grid_size[1]]
     fig, axes = plt.subplots(*grid_size, figsize=(grid_size[1] * 4, grid_size[0] * 4))
 
@@ -41,36 +49,52 @@ def create_dataset_grid(input_folder, output_folder, grid_size=(3, 3)):
     grid_path = os.path.join(output_folder, "dataset_grid.png")
     plt.savefig(grid_path, bbox_inches='tight')
     plt.close()
-    print(f"Grid de dataset guardado en {grid_path}.")
+    logging.info(f"Grid de dataset guardado en {grid_path}.")
 
-# Generar visualizaciones anotadas
-def annotate_model_results(model_path, input_folder, output_folder, conf_threshold=0.5):
+def annotate_model_results(model_path: str, input_folder: str, output_folder: str, conf_threshold=0.5) -> None:
     """
     Genera imágenes con anotaciones del modelo y las guarda en la carpeta especificada.
 
-    Parameters:
-    - model_path (str): Ruta al modelo YOLO entrenado.
-    - input_folder (str): Carpeta con imágenes de entrada.
-    - output_folder (str): Carpeta para guardar las imágenes anotadas.
-    - conf_threshold (float): Umbral de confianza para las detecciones.
+    Args:
+        model_path (str): Ruta al modelo YOLO entrenado.
+        input_folder (str): Carpeta con imágenes de entrada.
+        output_folder (str): Carpeta para guardar las imágenes anotadas.
+        conf_threshold (float): Umbral de confianza para las detecciones.
+
+    Raises:
+        FileNotFoundError: Si la carpeta de entrada no contiene imágenes.
     """
+    if not os.path.exists(input_folder):
+        logging.error("La carpeta de entrada no existe.")
+        raise FileNotFoundError("Carpeta de entrada no encontrada.")
+
     os.makedirs(output_folder, exist_ok=True)
     test_model_on_real_images(model_path, input_folder, output_folder)
-    print(f"Resultados anotados guardados en {output_folder}.")
+    logging.info(f"Resultados anotados guardados en {output_folder}.")
 
-# Crear comparaciones antes/después
-def generate_comparison_grid(model_path, input_folder, output_folder, num_samples=5):
+def generate_comparison_grid(model_path: str, input_folder: str, output_folder: str, num_samples=5) -> None:
     """
     Crea un grid comparativo de imágenes antes y después de las predicciones del modelo.
 
-    Parameters:
-    - model_path (str): Ruta al modelo YOLO entrenado.
-    - input_folder (str): Carpeta con imágenes de entrada.
-    - output_folder (str): Carpeta para guardar los grids generados.
-    - num_samples (int): Número de imágenes a comparar.
+    Args:
+        model_path (str): Ruta al modelo YOLO entrenado.
+        input_folder (str): Carpeta con imágenes de entrada.
+        output_folder (str): Carpeta para guardar los grids generados.
+        num_samples (int): Número de imágenes a comparar.
+
+    Raises:
+        FileNotFoundError: Si la carpeta de entrada no contiene imágenes.
     """
+    if not os.path.exists(input_folder):
+        logging.error("La carpeta de entrada no existe.")
+        raise FileNotFoundError("Carpeta de entrada no encontrada.")
+
     os.makedirs(output_folder, exist_ok=True)
     image_files = [f for f in os.listdir(input_folder) if f.endswith(('.jpg', '.png'))]
+    if not image_files:
+        logging.error("No se encontraron imágenes en la carpeta de entrada.")
+        raise FileNotFoundError("No se encontraron imágenes en la carpeta de entrada.")
+
     random.shuffle(image_files)
     selected_files = image_files[:num_samples]
 
@@ -95,23 +119,24 @@ def generate_comparison_grid(model_path, input_folder, output_folder, num_sample
         comparison_path = os.path.join(output_folder, f"comparison_{img_file}")
         plt.savefig(comparison_path, bbox_inches='tight')
         plt.close()
-        print(f"Grid de comparación guardado en {comparison_path}.")
+        logging.info(f"Grid de comparación guardado en {comparison_path}.")
 
-# Organización automática de subcarpetas
-def organize_presentation_folders(base_folder):
+def organize_presentation_folders(base_folder: str) -> None:
     """
     Crea y organiza las subcarpetas necesarias para las visualizaciones.
 
-    Parameters:
-    - base_folder (str): Carpeta raíz para las subcarpetas.
+    Args:
+        base_folder (str): Carpeta raíz para las subcarpetas.
     """
     subfolders = ["dataset_samples", "model_results", "before_after"]
     for subfolder in subfolders:
         os.makedirs(os.path.join(base_folder, subfolder), exist_ok=True)
-    print(f"Subcarpetas creadas en {base_folder}: {', '.join(subfolders)}")
+    logging.info(f"Subcarpetas creadas en {base_folder}: {', '.join(subfolders)}")
 
-# Ejecución del pipeline de visualización
-def main():
+def main() -> None:
+    """
+    Ejecución principal del pipeline de visualización.
+    """
     base_folder = "presentation"
     organize_presentation_folders(base_folder)
 
