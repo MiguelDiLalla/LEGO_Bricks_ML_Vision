@@ -1,7 +1,12 @@
+# Importaciones estándar de Python
 import os
 import random
+
+# Importaciones de librerías externas
 import matplotlib.pyplot as plt
 from PIL import Image
+
+# Importaciones locales del proyecto
 from pipeline import test_model_on_real_images
 
 # Crear grids de muestras del dataset

@@ -1,0 +1,5 @@
+torch==2.4.1+cpu #torch==2.0.1+cpu
+ultralytics==8.2.99
+pillow==11.1.0
+matplotlib==3.8.4
+kaggle==1.6.17
