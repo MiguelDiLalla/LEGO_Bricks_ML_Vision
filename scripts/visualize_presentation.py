@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 
 # Importaciones locales del proyecto
-from pipeline import test_model_on_real_images
+from scripts.pipeline import test_model_on_real_images
 
 # Crear grids de muestras del dataset
 def create_dataset_grid(input_folder, output_folder, grid_size=(3, 3)):
