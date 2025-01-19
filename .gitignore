@@ -43,4 +43,4 @@ output/
 *.tmp
 
 # Ignorar el PDF generado si no es parte del código fuente
-*.pdf
+# *.pdf
