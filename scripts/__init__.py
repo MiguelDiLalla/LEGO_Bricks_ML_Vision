@@ -33,6 +33,7 @@ __all__ = [
     "organize_presentation_folders",
 ]
 
+__all__ = ["pipeline", "visualize_presentation"]
 """
 scripts: Módulos para el preprocesamiento, entrenamiento y visualización en el proyecto de detección de LEGO.
 Incluye herramientas para la generación de presentaciones visuales y la organización automática de carpetas.
