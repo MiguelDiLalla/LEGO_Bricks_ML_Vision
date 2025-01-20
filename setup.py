@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="lego_bricks_ml_vision",
-    version="0.1.31",
+    version="0.1.32",
     packages=find_packages(include=["lego_bricks_ml_vision", "lego_bricks_ml_vision.*", "scripts", "scripts.*"]),
     install_requires=[
         "torch>=1.8.0",
