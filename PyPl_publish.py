@@ -19,6 +19,10 @@ def main():
 
     print(f"Versión actualizada a {version} en setup.py")
 
+    # conda activate MiguelEnvHaB
+    subprocess.run(["conda", "init", "bash"])
+    subprocess.run(["conda", "activate", "MiguelEnvHaB"])
+
     # Reconstruir el paquete
     print("Construyendo el paquete...")
     subprocess.run(["rm", "-r", "dist/"])
