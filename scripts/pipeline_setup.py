@@ -3,7 +3,8 @@ import shutil
 from sklearn.model_selection import train_test_split
 import json
 from pprint import pprint
-
+import albumentations as A
+import cv2
 
 # === Configuración Inicial ===
 def detect_environment():
@@ -47,45 +48,44 @@ def setup_environment(base_path="/kaggle/working/output"):
         return {
             "raw_images_path": os.path.join(dataset_path, "Images_600x800"),
             "raw_labels_path": os.path.join(dataset_path, "LabelMe_txt_bricks"),
-            # el folder "output" del folder de ejecucion
             "output_path": base_path
         }
-
     elif environment == "colab":
-        from google.colab import userdata
-        kaggle_path = "kaggle.json"
-        if not os.path.exists(kaggle_path):
-            # raise EnvironmentError("[ERROR] Sube tu archivo kaggle.json al entorno Colab en /root/.kaggle/")
-            os.makedirs("/root/.kaggle", exist_ok=True)
-        
-        
-            kaggle_user = userdata.get('KaggleUser')
-            kaggle_token = userdata.get('KaggleToken')
-            if not kaggle_user or not kaggle_token:
-                raise EnvironmentError("[ERROR] No se encontraron las credenciales de Kaggle en Google Colab.")
-            kaggle_data = {
-                "username": kaggle_user,
-                "key": kaggle_token
-            }
-            with open("/root/.kaggle/kaggle.json", "w") as f:
-                json.dump(kaggle_data, f)
-                print("[INFO] Credenciales de Kaggle configuradas en Google Colab.")
-        else:
-            os.makedirs("/root/.kaggle", exist_ok=True)
-            shutil.move(kaggle_path, "/root/.kaggle/kaggle.json")
-            print("[INFO] Archivo kaggle.json movido a /root/.kaggle/")
-        os.chmod("/root/.kaggle/kaggle.json", 0o600)
-        os.makedirs("working", exist_ok=True)
-        os.makedirs("working/spiled-lego-bricks", exist_ok=True)
-        os.system("kaggle datasets download -d migueldilalla/spiled-lego-bricks -p working/spiled-lego-bricks --unzip")
-        os.makedirs("/working/output", exist_ok=True)
-        dataset_path = "working/spiled-lego-bricks"
+            from google.colab import userdata
+            kaggle_path = "kaggle.json"
+            if not os.path.exists(kaggle_path):
+                # raise EnvironmentError("[ERROR] Sube tu archivo kaggle.json al entorno Colab en /root/.kaggle/")
+                os.makedirs("/root/.kaggle", exist_ok=True)
+            
+            
+                kaggle_user = userdata.get('KaggleUser')
+                kaggle_token = userdata.get('KaggleToken')
+                if not kaggle_user or not kaggle_token:
+                    raise EnvironmentError("[ERROR] No se encontraron las credenciales de Kaggle en Google Colab.")
+                kaggle_data = {
+                    "username": kaggle_user,
+                    "key": kaggle_token
+                }
+                with open("/root/.kaggle/kaggle.json", "w") as f:
+                    json.dump(kaggle_data, f)
+                    print("[INFO] Credenciales de Kaggle configuradas en Google Colab.")
+            else:
+                os.makedirs("/root/.kaggle", exist_ok=True)
+                shutil.move(kaggle_path, "/root/.kaggle/kaggle.json")
+                print("[INFO] Archivo kaggle.json movido a /root/.kaggle/")
+            os.chmod("/root/.kaggle/kaggle.json", 0o600)
+            os.makedirs("working", exist_ok=True)
+            os.makedirs("working/spiled-lego-bricks", exist_ok=True)
+            os.system("kaggle datasets download -d migueldilalla/spiled-lego-bricks -p working/spiled-lego-bricks --unzip")
+            os.makedirs("/working/output", exist_ok=True)
+            dataset_path = "working/spiled-lego-bricks"
 
-        return {
-            "raw_images_path": os.path.join(dataset_path, "Images_600x800"),
-            "raw_labels_path": os.path.join(dataset_path, "LabelMe_txt_bricks"),
-            "output_path": os.path.join(os.getcwd(), "working", "output")
-        }
+            return {
+                "raw_images_path": os.path.join(dataset_path, "Images_600x800"),
+                "raw_labels_path": os.path.join(dataset_path, "LabelMe_txt_bricks"),
+                "output_path": os.path.join(os.getcwd(), "working", "output")
+            }
+
 
     elif environment == "local":
         kaggle_json_path = os.path.expanduser("~/.kaggle/kaggle.json")
@@ -95,7 +95,6 @@ def setup_environment(base_path="/kaggle/working/output"):
         os.makedirs("working/spiled-lego-bricks", exist_ok=True)
         if not os.listdir("working/spiled-lego-bricks"):
             os.system("kaggle datasets download -d migueldilalla/spiled-lego-bricks -p working/spiled-lego-bricks --unzip")
-        #make output forder
         os.makedirs("working/output", exist_ok=True)
         dataset_path = "working/spiled-lego-bricks"
 
@@ -143,7 +142,6 @@ def verify_dataset_structure(raw_images_path, raw_labels_path):
     summary = {}
     for folder in required_folders:
         if not os.path.exists(folder):
-            print(f"[ERROR] Carpeta requerida no encontrada: {folder}")
             raise FileNotFoundError(f"[ERROR] Carpeta requerida no encontrada: {folder}")
 
         num_files = len([f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f))])
@@ -160,26 +158,14 @@ def create_preprocessing_structure(output_dir="/kaggle/working/output"):
     Parameters:
     - output_dir (str): Ruta base para la carpeta PREPROCESSING/.
     """
-
-    #make sure PREPROCESSING folder exists
     os.makedirs(output_dir, exist_ok=True)
-    pprint({"Estructura de Carpetas": output_dir})
-
     subfolders = [
         "dataset/images/train", "dataset/images/val", "dataset/images/test",
         "dataset/labels/train", "dataset/labels/val", "dataset/labels/test",
         "test_images"
     ]
     for subfolder in subfolders:
-        # print(os.path.join(output_dir, subfolder).replace("\\", "/"))
-        # #print if it exists
-        # print(os.path.exists(os.path.join(output_dir, subfolder).replace("\\", "/")))
-        # #open in file explorer
-        # # if subfolder == "test_images":
-        # os.system(f"explorer {os.path.join(output_dir, subfolder).replace('/', '\\')}")
-
-        os.makedirs(os.path.join(output_dir, subfolder).replace("\\", "/"), exist_ok=True)
-       
+        os.makedirs(os.path.join(output_dir, subfolder), exist_ok=True)
     print(f"[INFO] Estructura de carpetas creada en {output_dir}.")
 
 def copy_and_partition_data(input_images, input_labels, output_dir):
@@ -216,38 +202,90 @@ def copy_and_partition_data(input_images, input_labels, output_dir):
 
     pprint({"Partición Completada": {partition: len(imgs) for partition, (imgs, _) in partitions.items()}})
 
-def validate_final_structure(output_dir="/kaggle/working/output"):
+def augment_data(input_images, input_labels, output_dir, num_augmentations=2):
     """
-    Valida que las carpetas de imágenes y etiquetas contengan archivos coincidentes.
+    Aplica aumentaciones al dataset y guarda imágenes y etiquetas aumentadas.
 
     Parameters:
-    - output_dir (str): Carpeta base para PREPROCESSING/.
+    - input_images (str): Carpeta de imágenes originales.
+    - input_labels (str): Carpeta de etiquetas en formato YOLO.
+    - output_dir (str): Carpeta donde se guardarán los datos aumentados.
+    - num_augmentations (int): Número de versiones aumentadas por imagen.
     """
-    partitions = ["train", "val", "test"]
-    summary = {}
+    aug_images_dir = os.path.join(output_dir, "augmented_images")
+    aug_labels_dir = os.path.join(output_dir, "augmented_labels")
+    os.makedirs(aug_images_dir, exist_ok=True)
+    os.makedirs(aug_labels_dir, exist_ok=True)
 
-    # flag = True
+    transform = A.Compose([
+        A.HorizontalFlip(p=0.5),
+        A.RandomBrightnessContrast(p=0.2),
+        A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.05, rotate_limit=15, p=0.5),
+        A.Resize(height=640, width=640),
+    ], bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
 
-    for partition in partitions:
-        images = sorted(os.listdir(os.path.join(output_dir, f"dataset/images/{partition}/")))
-        labels = sorted(os.listdir(os.path.join(output_dir, f"dataset/labels/{partition}/")))
+    images = sorted([f for f in os.listdir(input_images) if f.endswith(".jpg")])
+    for img_file in images:
+        img_path = os.path.join(input_images, img_file)
+        label_path = os.path.join(input_labels, img_file.replace(".jpg", ".txt"))
 
-        
-        # if flag:
-        #     print(output_dir, f"dataset/images/{partition}/")
-        #     flag = False
-        #     #open the folder in file explorer
-        #     os.system(f"explorer {os.path.join(output_dir, f'dataset/images/{partition}/').replace('/', '\\')}")
-        
-        if len(images) != len(labels):
-            raise ValueError(f"[ERROR] Desbalance entre imágenes y etiquetas en {partition}.")
-        summary[partition] = len(images)
-    
-    pprint({"Validación Final": summary})
+        if not os.path.exists(label_path):
+            continue
 
-# === Ejecución del Pipeline ===
+        image = cv2.imread(img_path)
+        bboxes, class_labels = load_labels(label_path)
+
+        for i in range(num_augmentations):
+            augmented = transform(image=image, bboxes=bboxes, class_labels=class_labels)
+            aug_image = augmented["image"]
+            aug_bboxes = augmented["bboxes"]
+            aug_labels = augmented["class_labels"]
+
+            aug_image_path = os.path.join(aug_images_dir, f"{img_file.split('.')[0]}_aug{i}.jpg")
+            cv2.imwrite(aug_image_path, aug_image)
+
+            aug_label_path = os.path.join(aug_labels_dir, f"{img_file.split('.')[0]}_aug{i}.txt")
+            save_labels(aug_label_path, aug_bboxes, aug_labels)
+
+    print(f"[INFO] Augmented data saved to {output_dir}.")
+
+def load_labels(label_path):
+    """
+    Carga etiquetas en formato YOLO desde un archivo .txt.
+
+    Parameters:
+    - label_path (str): Ruta al archivo de etiquetas en formato YOLO.
+
+    Returns:
+    - bboxes (list): Lista de bounding boxes en formato YOLO.
+    - class_labels (list): Lista de etiquetas de clase.
+    """
+    bboxes, class_labels = [], []
+    with open(label_path, "r") as f:
+        lines = f.readlines()
+    for line in lines:
+        class_id, x_center, y_center, width, height = map(float, line.strip().split())
+        bboxes.append([x_center, y_center, width, height])
+        class_labels.append(int(class_id))
+    return bboxes, class_labels
+
+def save_labels(output_path, bboxes, class_labels):
+    """
+    Guarda etiquetas en formato YOLO en un archivo .txt.
+
+    Parameters:
+    - output_path (str): Ruta donde se guardará el archivo de etiquetas.
+    - bboxes (list): Lista de bounding boxes en formato YOLO.
+    - class_labels (list): Lista de etiquetas de clase.
+    """
+    with open(output_path, "w") as f:
+        for bbox, label in zip(bboxes, class_labels):
+            f.write(f"{label} {' '.join(map(str, bbox))}\n")
+
 def main():
-    """Ejecución principal del pipeline."""
+    """
+    Ejecución principal del pipeline.
+    """
     paths = setup_environment()
     pprint({"Rutas Configuradas": paths})
 
@@ -257,9 +295,15 @@ def main():
 
     copy_and_partition_data(paths["raw_images_path"], paths["raw_labels_path"], paths["output_path"])
 
-    validate_final_structure(paths["output_path"])
+    augment_data(
+        input_images=os.path.join(paths["output_path"], "dataset/images/train"),
+        input_labels=os.path.join(paths["output_path"], "dataset/labels/train"),
+        output_dir=os.path.join(paths["output_path"], "augmented_dataset"),
+        num_augmentations=3
+    )
 
-    print("\n[INFO] Pipeline completado exitosamente.\n")
+    validate_final_structure(paths["output_path"])
+    print("\n[INFO] Pipeline setup completed with augmentations.\n")
 
 if __name__ == "__main__":
     main()
