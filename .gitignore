@@ -2,6 +2,9 @@
 data/*
 !data/annotations/*
 
+# Ignorar todo en la carpeta "working" de la carpeta "notebooks" excepto los archivos de datos si es necesario.
+notebooks/working/*
+
 # Ignorar entornos virtuales
 .env/
 *.env
