@@ -5,6 +5,7 @@ import json
 from pprint import pprint
 import albumentations as A
 import cv2
+import yaml
 
 # === Configuración Inicial ===
 def detect_environment():
@@ -282,6 +283,78 @@ def save_labels(output_path, bboxes, class_labels):
         for bbox, label in zip(bboxes, class_labels):
             f.write(f"{label} {' '.join(map(str, bbox))}\n")
 
+
+def copy_augmented_to_train(augmented_dir, output_path):
+    """
+    Copia los datos aumentados a las subcarpetas correspondientes de 'train'.
+
+    Parameters:
+    - augmented_dir (str): Directorio que contiene imágenes y etiquetas aumentadas.
+    - output_path(str): Ruta base para la salida.
+    """
+    aug_images_dir = os.path.join(augmented_dir, "augmented_images")
+    aug_labels_dir = os.path.join(augmented_dir, "augmented_labels")
+    train_images_dir = os.path.join(output_path, "dataset/images/train")
+    train_labels_dir = os.path.join(output_path, "dataset/labels/train")
+
+    for img_file in os.listdir(aug_images_dir):
+        shutil.copy(os.path.join(aug_images_dir, img_file), train_images_dir)
+
+    for label_file in os.listdir(aug_labels_dir):
+        shutil.copy(os.path.join(aug_labels_dir, label_file), train_labels_dir)
+
+    print(f"[INFO] Augmented data merged into train set at {output_path}.")
+
+def create_dataset_yaml(output_path, num_classes, class_names):
+    """
+    Crea un archivo dataset.yaml en el formato requerido por YOLO.
+
+    Parameters:
+    - output_path (str): Ruta para guardar el archivo dataset.yaml.
+    - num_classes (int): Número total de clases.
+    - class_names (list): Lista de nombres de las clases.
+    """
+    dataset_config = {
+        "path": "working/output/dataset",
+        "train": "images/train",
+        "val": "images/val",
+        "nc": num_classes,
+        "names": {i: name for i, name in enumerate(class_names)}
+    }
+
+    with open(output_path, "w") as f:
+        yaml.dump(dataset_config, f, default_flow_style=False)
+    print(f"[INFO] dataset.yaml created at {output_path}.")
+
+def validate_final_structure(output_dir="/kaggle/working/output"):
+    """
+    Valida que las carpetas de imágenes y etiquetas contengan archivos coincidentes.
+
+    Parameters:
+    - output_dir (str): Carpeta base para PREPROCESSING/.
+    """
+    partitions = ["train", "val", "test"]
+    summary = {}
+
+    # flag = True
+
+    for partition in partitions:
+        images = sorted(os.listdir(os.path.join(output_dir, f"dataset/images/{partition}/")))
+        labels = sorted(os.listdir(os.path.join(output_dir, f"dataset/labels/{partition}/")))
+
+        
+        # if flag:
+        #     print(output_dir, f"dataset/images/{partition}/")
+        #     flag = False
+        #     #open the folder in file explorer
+        #     os.system(f"explorer {os.path.join(output_dir, f'dataset/images/{partition}/').replace('/', '\\')}")
+        
+        if len(images) != len(labels):
+            raise ValueError(f"[ERROR] Desbalance entre imágenes y etiquetas en {partition}.")
+        summary[partition] = len(images)
+    
+    pprint({"Validación Final": summary})
+
 def main():
     """
     Ejecución principal del pipeline.
@@ -302,8 +375,19 @@ def main():
         num_augmentations=3
     )
 
+    copy_augmented_to_train(
+        augmented_dir=os.path.join(paths["output_path"], "augmented_dataset"),
+        output_path=paths["output_path"]
+    )
+
+    create_dataset_yaml(
+        output_path=os.path.join(paths["output_path"], "dataset/dataset.yaml"),
+        num_classes=1,  # Replace with the actual number of classes
+        class_names=["brick"]  # Add all class names here
+    )
+
     validate_final_structure(paths["output_path"])
-    print("\n[INFO] Pipeline setup completed with augmentations.\n")
+    print("\n[INFO] Pipeline setup completed with augmentations and dataset.yaml creation.\n")
 
 if __name__ == "__main__":
     main()

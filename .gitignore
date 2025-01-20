@@ -4,6 +4,9 @@ data/*
 
 # Ignorar todo en la carpeta "working" de la carpeta "notebooks" excepto los archivos de datos si es necesario.
 notebooks/working/*
+notebooks/optuna_yolo_training/*
+notebooks/regular_yolo_training/*
+notebooks/yolov8n.pt
 
 # Ignorar entornos virtuales
 .env/
