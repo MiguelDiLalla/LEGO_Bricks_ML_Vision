@@ -6,6 +6,7 @@ from pprint import pprint
 import albumentations as A
 import cv2
 import yaml
+import sys
 
 # === Configuración Inicial ===
 def detect_environment():
@@ -15,14 +16,15 @@ def detect_environment():
     Returns:
     - str: Nombre del entorno detectado.
     """
-    if os.path.exists("/kaggle"):
-        environment = "kaggle"
-    elif "COLAB_GPU" in os.environ:
+    if "google.colab" in sys.modules:
         environment = "colab"
+    elif os.path.exists("/kaggle"):
+        environment = "kaggle"
     else:
         environment = "local"
     pprint({"Detected Environment": environment})
     return environment
+
 
 def setup_environment(base_path="/kaggle/working/output"):
     """
@@ -307,24 +309,33 @@ def copy_augmented_to_train(augmented_dir, output_path):
 
 def create_dataset_yaml(output_path, num_classes, class_names):
     """
-    Crea un archivo dataset.yaml en el formato requerido por YOLO.
+    Creates a dataset.yaml file with absolute paths for YOLO training.
 
     Parameters:
-    - output_path (str): Ruta para guardar el archivo dataset.yaml.
-    - num_classes (int): Número total de clases.
-    - class_names (list): Lista de nombres de las clases.
+    - output_path (str): Base directory where the dataset.yaml file will be saved.
+    - num_classes (int): Total number of classes.
+    - class_names (list): List of class names.
     """
+    # Resolve absolute paths for train and val folders
+    dataset_dir = os.path.abspath(output_path)
+    train_path = os.path.join(dataset_dir, "images/train")
+    val_path = os.path.join(dataset_dir, "images/val")
+
+    # Create the dataset configuration dictionary
     dataset_config = {
-        "path": "working/output/dataset",
-        "train": "images/train",
-        "val": "images/val",
+        "path": dataset_dir,
+        "train": train_path,
+        "val": val_path,
         "nc": num_classes,
         "names": {i: name for i, name in enumerate(class_names)}
     }
 
-    with open(output_path, "w") as f:
+    # Save the configuration to the dataset.yaml file
+    yaml_path = os.path.join(dataset_dir, "dataset.yaml")
+    with open(yaml_path, "w") as f:
         yaml.dump(dataset_config, f, default_flow_style=False)
-    print(f"[INFO] dataset.yaml created at {output_path}.")
+    
+    print(f"[INFO] dataset.yaml created at: {yaml_path}")
 
 def validate_final_structure(output_dir="/kaggle/working/output"):
     """
@@ -381,7 +392,7 @@ def main():
     )
 
     create_dataset_yaml(
-        output_path=os.path.join(paths["output_path"], "dataset/dataset.yaml"),
+        output_path=os.path.join(paths["output_path"], "dataset"),
         num_classes=1,  # Replace with the actual number of classes
         class_names=["brick"]  # Add all class names here
     )

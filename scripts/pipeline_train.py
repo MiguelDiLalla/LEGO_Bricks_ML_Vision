@@ -4,10 +4,45 @@ from ultralytics import YOLO
 from datetime import datetime
 import logging
 from tqdm import tqdm
-from pprint import pprint
+
+EPOCAS = 4
 
 # === Configuración del Logger ===
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# === Detección del dispositivo ===
+def get_device():
+    """
+    Detecta el dispositivo adecuado para la ejecución.
+
+    Returns:
+    - str: Dispositivo a usar ("cpu", "0", "0,1").
+    """
+    if os.environ.get('COLAB_GPU') is not None:
+        return "0"  # Colab
+    elif os.path.exists("/kaggle"):  # Kaggle
+        return "0,1"
+    else:
+        return "cpu"  # Local
+
+# === Callback personalizado para barra de progreso ===
+class ProgressBarCallback:
+    def __init__(self, total_epochs):
+        self.total_epochs = total_epochs
+        self.pbar = None
+
+    def on_train_start(self, trainer, **kwargs):
+        # Inicializar barra de progreso
+        self.pbar = tqdm(total=self.total_epochs, desc="Progreso del entrenamiento", unit="época")
+
+    def on_epoch_end(self, trainer, **kwargs):
+        # Actualizar barra de progreso al final de cada época
+        self.pbar.update(1)
+        self.pbar.set_postfix({"Última época": kwargs.get('epoch') + 1})
+
+    def on_train_end(self, trainer, **kwargs):
+        # Cerrar barra de progreso
+        self.pbar.close()
 
 # === Configuración de la Función Objetivo de Optuna ===
 def objective(trial):
@@ -29,17 +64,17 @@ def objective(trial):
     # Configurar entrenamiento
     project_name = "optuna_yolo_training"
     dataset_yaml = os.path.join(os.getcwd(), "working", "output", "dataset", "dataset.yaml")
-# os.path.join(os.getcwd(), "working", "output", "dataset", "dataset.yaml")
     try:
         results = model.train(
             data=dataset_yaml,
-            epochs=50,  # Épocas fijas para experimentos
+            epochs=EPOCAS,  # Épocas fijas para experimentos
             batch=batch_size,
             imgsz=imgsz,
             lr0=learning_rate,
             momentum=momentum,
             project=project_name,
-            name=f"trial_{trial.number}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            name=f"trial_{trial.number}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            device=get_device()
         )
 
         # Evaluar el modelo
@@ -50,7 +85,7 @@ def objective(trial):
         return float("nan")
 
 # === Entrenamiento Regular (Sin Optuna) ===
-def train_model(dataset_yaml=None, pretrained_model="yolov8n.pt", epochs=50, batch_size=16, learning_rate=0.001, momentum=0.9, imgsz=640):
+def train_model(dataset_yaml=None, pretrained_model="yolov8n.pt", epochs=EPOCAS, batch_size=16, learning_rate=0.001, momentum=0.9, imgsz=640):
     """
     Entrena el modelo YOLO con hiperparámetros definidos manualmente.
 
@@ -76,20 +111,25 @@ def train_model(dataset_yaml=None, pretrained_model="yolov8n.pt", epochs=50, bat
     output_dir = f"regular_yolo_training/{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     os.makedirs(output_dir, exist_ok=True)
 
+    # Registrar el callback de barra de progreso
+    progress_bar = ProgressBarCallback(total_epochs=epochs)
+    model.add_callback("on_train_start", progress_bar.on_train_start)
+    model.add_callback("on_epoch_end", progress_bar.on_epoch_end)
+    model.add_callback("on_train_end", progress_bar.on_train_end)
+
     try:
         logging.info("[INFO] Iniciando entrenamiento regular...")
-        with tqdm(total=epochs, desc="Progreso del entrenamiento", unit="época") as pbar:
-            model.train(
-                data=dataset_yaml,
-                epochs=epochs,
-                batch=batch_size,
-                imgsz=imgsz,
-                lr0=learning_rate,
-                momentum=momentum,
-                project=output_dir,
-                name="train"#,
-                # progress_bar=pbar.update
-            )
+        model.train(
+            data=dataset_yaml,
+            epochs=epochs,
+            batch=batch_size,
+            imgsz=imgsz,
+            lr0=learning_rate,
+            momentum=momentum,
+            project=output_dir,
+            name="train",
+            device=get_device()
+        )
         logging.info(f"[INFO] Entrenamiento completado. Resultados guardados en {output_dir}.")
     except Exception as e:
         logging.error(f"[ERROR] Error durante el entrenamiento: {e}")
@@ -123,6 +163,7 @@ def run_optuna_study(dataset_yaml=None, n_trials=20):
     study.trials_dataframe().to_csv("optuna_results.csv")
     optuna.visualization.plot_optimization_history(study).write_html("optuna_optimization_history.html")
 
+
 # === Función Principal ===
 def main(optuna_mode=False):
     """
@@ -131,9 +172,16 @@ def main(optuna_mode=False):
     Parameters:
     - optuna_mode (bool): Si es True, utiliza Optuna para optimizar hiperparámetros.
     """
-    # dataset_yaml = os.getenv("DATASET_YAML", "working/output/dataset/dataset.yaml")
-    dataset_yaml = os.path.join(os.getcwd(), "working", "output", "dataset", "dataset.yaml")
-    print(os.getcwd())
+    if "google.colab" in sys.modules:
+        dataset_yaml = os.path.join(os.getcwd(), "working", "output", "dataset", "dataset.yaml")
+        print(dataset_yaml)
+    elif os.path.exists("/kaggle"):
+        dataset_yaml = os.path.join(os.getcwd(), "output", "dataset", "dataset.yaml")
+        print(dataset_yaml)
+    else:
+        dataset_yaml = os.path.join(os.getcwd(), "output", "dataset", "dataset.yaml")
+        print(dataset_yaml)
+
 
     if optuna_mode:
         run_optuna_study(dataset_yaml, n_trials=20)
