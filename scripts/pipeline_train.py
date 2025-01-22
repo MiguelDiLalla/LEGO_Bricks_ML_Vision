@@ -173,13 +173,16 @@ def main(optuna_mode=False):
     - optuna_mode (bool): Si es True, utiliza Optuna para optimizar hiperparámetros.
     """
     if "google.colab" in sys.modules:
+        print('google colab')
         dataset_yaml = os.path.join(os.getcwd(), "working", "output", "dataset", "dataset.yaml")
         print(dataset_yaml)
     elif os.path.exists("/kaggle"):
+        print('kaggle')
         dataset_yaml = os.path.join(os.getcwd(), "output", "dataset", "dataset.yaml")
         print(dataset_yaml)
     else:
-        dataset_yaml = os.path.join(os.getcwd(), "output", "dataset", "dataset.yaml")
+        print('local')
+        dataset_yaml = os.path.join(os.getcwd(), "working", "output", "dataset", "dataset.yaml")
         print(dataset_yaml)
 
 
