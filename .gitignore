@@ -38,7 +38,7 @@ dist/
 # Ignorar outputs y carpetas de resultados temporales
 results/
 output/
-test/
+tests/
 
 # Ignorar configuraciones locales de IDE
 .vscode/
