@@ -18,21 +18,25 @@
       - LabelMe_txt_studs
         More than 20 files, summary:
           .txt: 2176 files
-      - Yolo_json_files
-        More than 20 files, summary:
-          .json: 1309 files
       - Yolo_json_files_bricks
         More than 20 files, summary:
           .json: 1803 files
+      - Yolo_json_files_studs
+        More than 20 files, summary:
+          .json: 1309 files
     - processed
+      Studs_dataset.zip
       - Cropped_bricks
         More than 20 files, summary:
-          .jpg: 7619 files
+          .jpg: 2176 files
+      - LabelMe_txt_studs
+        More than 20 files, summary:
+          .txt: 2176 files
     - raw
       More than 20 files, summary:
-        .jpg: 1803 files
-        .zip: 2 files
         .png: 7 files
+        .zip: 2 files
+        .jpg: 1803 files
   - dist
     lego_bricks_ml_vision-0.1.3-py3-none-any.whl
     lego_bricks_ml_vision-0.1.3.tar.gz
@@ -57,8 +61,10 @@
   - models
     - checkpoints
       Brick_Model_best20250123_192838t.pt
+      Stud_Model_best20250124_170824.pt
       yolov8n.pt
       - Legacy_Models
+        Stud_Model_best20250124_165222.pt
         YOLO_LegoBrick_Detectron_v0.pt
         YOLOdetectron_LegoBrick_yolov8n_20241029_175720.pt
         YOLOdetectron_Stud_yolov8n_20241030_151507.pt
@@ -78,26 +84,44 @@
     - dataset_samples
     - model_results
   - results
-    - cropped_bricks
-      More than 20 files, summary:
-        .jpg: 7619 files
-        .json: 1309 files
-    - logs
-      - 20250123_192838
+    - predictions
+    - TrainingSessions
+      - 20250123_192838bricks
         - train
           More than 20 files, summary:
-            .png: 7 files
+            .csv: 1 files
             .yaml: 1 files
             .0: 1 files
             .jpg: 11 files
-            .csv: 1 files
+            .png: 7 files
           - weights
             best20250123_192838t.pt
             last.pt
         - visualizations
           loss_curve.png
           metrics_summary.csv
-    - predictions
+      - 20250124_165222studs
+        - train
+          More than 20 files, summary:
+            .csv: 1 files
+            .yaml: 1 files
+            .0: 1 files
+            .jpg: 11 files
+            .png: 7 files
+          - weights
+            best.pt
+            last.pt
+      - 20250124_170824studs
+        - train
+          More than 20 files, summary:
+            .csv: 1 files
+            .yaml: 1 files
+            .0: 1 files
+            .jpg: 14 files
+            .png: 7 files
+          - weights
+            best.pt
+            last.pt
   - scripts
     __init__.py
     pipeline_inference_part1.py
