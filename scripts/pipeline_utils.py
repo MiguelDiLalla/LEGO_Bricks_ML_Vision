@@ -1,28 +1,23 @@
-# pipeline_utils.py
+"""
+Main pipeline for detecting LEGO bricks and studs using YOLO models.
+
+This script includes:
+1. Brick and stud detection.
+2. EXIF metadata saving.
+3. Classification of LEGO dimensions based on stud count and alignment.
+"""
+
+# Imports (Consolidated)
 import os
 import json
-import shutil
 import cv2
 import numpy as np
-from ultralytics import YOLO
-from matplotlib import pyplot as plt
-
-
-import os
-import json
-
-import os
-import json
-import math
-import pprint
-import random
-
+import matplotlib.pyplot as plt
 import hashlib
 import platform
-from PIL import Image, ExifTags
-
 import datetime
-import sys
+from ultralytics import YOLO
+from PIL import Image, ExifTags
 
 def labelme_to_yolo(input_folder, output_folder):
     """
@@ -360,57 +355,44 @@ def retrieve_exif_metadata(image_path, CLEAN_IF_TRUE=False):
 
     return True, metadata_dict
 
+def detect_objects(image, model, label, confidence_threshold=0.5, working_folder=None, SAVE_ANNOTATED=False, PLT_ANNOTATED=False):
+    """
+    Generalized function for object detection.
+
+    Args:
+        image (numpy array): Input image for detection.
+        model (YOLO): Pre-trained YOLO model.
+        label (str): Label for visualization (e.g., 'Brick', 'Stud').
+        confidence_threshold (float): Minimum confidence score for keeping detections.
+        working_folder (str, optional): Path to save annotated images.
+        SAVE_ANNOTATED (bool): If True, saves annotated images.
+        PLT_ANNOTATED (bool): If True, displays annotated images.
+
+    Returns:
+        list: List of bounding boxes [x_min, y_min, x_max, y_max].
+    """
+    results = model(image)
+    objects = [box.xyxy[0].tolist() for box in results[0].boxes if box.conf >= confidence_threshold]
+
+    # Optional visualization
+    if SAVE_ANNOTATED or PLT_ANNOTATED:
+        for (x1, y1, x2, y2) in objects:
+            cv2.rectangle(image, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0) if label == 'Brick' else (255, 0, 0), 2)
+        if SAVE_ANNOTATED and working_folder:
+            filename = f"annotated_{label.lower()}s.jpg"
+            cv2.imwrite(os.path.join(working_folder, filename), image)
+        if PLT_ANNOTATED:
+            plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+            plt.axis('off')
+            plt.show()
+
+    return objects
 
 def detect_bricks(image, model_bricks, working_folder, SAVE_ANNOTATED, PLT_ANNOTATED, confidence_threshold=0.5):
-    """Detects LEGO bricks in an image using YOLO."""
-    results = model_bricks(image)  # Run YOLO inference
-    bricks = []
-    for box in results[0].boxes:
-        if box.conf >= confidence_threshold:  # Apply confidence threshold
-            x1, y1, x2, y2 = box.xyxy[0].tolist()
-            bricks.append([x1, y1, x2, y2])
-
-    # Filter boxes that are unrealistically large (e.g., nearly the size of the image)
-    height, width, _ = image.shape
-    bricks = [box for box in bricks if not (box[2] - box[0] > 0.9 * width or box[3] - box[1] > 0.9 * height)]
-
-    if SAVE_ANNOTATED or PLT_ANNOTATED:
-        for (x1, y1, x2, y2) in bricks:
-            cv2.rectangle(image, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
-        if SAVE_ANNOTATED:
-            cv2.imwrite(os.path.join(working_folder, "annotated_bricks.jpg"), image)
-        if PLT_ANNOTATED:
-            plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-            plt.axis('off')
-            plt.show()
-
-    return bricks
+    return detect_objects(image, model_bricks, "Brick", confidence_threshold, working_folder, SAVE_ANNOTATED, PLT_ANNOTATED)
 
 def detect_studs(image, model_studs, working_folder, SAVE_ANNOTATED, PLT_ANNOTATED, confidence_threshold=0.5):
-    """Detects LEGO studs in an image using YOLO."""
-    results = model_studs(image)  # Run YOLO inference
-    studs = []
-    for box in results[0].boxes:
-        if box.conf >= confidence_threshold:  # Apply confidence threshold
-            x1, y1, x2, y2 = box.xyxy[0].tolist()
-            studs.append([x1, y1, x2, y2])
-
-    # Filter boxes that are unrealistically large (e.g., nearly the size of the image)
-    height, width, _ = image.shape
-    studs = [box for box in studs if not (box[2] - box[0] > 0.9 * width or box[3] - box[1] > 0.9 * height)]
-
-    if SAVE_ANNOTATED or PLT_ANNOTATED:
-        for (x1, y1, x2, y2) in studs:
-            cv2.rectangle(image, (int(x1), int(y1)), (int(x2), int(y2)), (255, 0, 0), 2)
-        if SAVE_ANNOTATED:
-            cv2.imwrite(os.path.join(working_folder, "annotated_studs.jpg"), image)
-        if PLT_ANNOTATED:
-            plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-            plt.axis('off')
-            plt.show()
-
-    return studs
-
+    return detect_objects(image, model_studs, "Stud", confidence_threshold, working_folder, SAVE_ANNOTATED, PLT_ANNOTATED)
 
 def crop_brick(image, brick_bbox, working_folder):
     """Crops a detected brick from the image and saves it."""
@@ -419,6 +401,29 @@ def crop_brick(image, brick_bbox, working_folder):
     cropped_path = os.path.join(working_folder, f"cropped_brick_{x1}_{y1}.jpg")
     cv2.imwrite(cropped_path, cropped_brick)
     return cropped_brick
+
+def save_metadata(metadata, working_folder, output_format="json"):
+    """
+    Save metadata to a specified format (JSON/CSV).
+
+    Args:
+        metadata (dict): Metadata dictionary.
+        working_folder (str): Path to save the metadata.
+        output_format (str): Output format ('json' or 'csv').
+
+    Raises:
+        ValueError: If the specified output format is not supported.
+    """
+    if output_format == "json":
+        json_path = os.path.join(working_folder, "inference_metadata.json")
+        with open(json_path, "w") as json_file:
+            json.dump(metadata, json_file, indent=4)
+    elif output_format == "csv":
+        import pandas as pd
+        csv_path = os.path.join(working_folder, "inference_metadata.csv")
+        pd.DataFrame([metadata]).to_csv(csv_path, index=False)
+    else:
+        raise ValueError(f"Unsupported output format: {output_format}")
 
 def predict_brick_dimensions(image_path, model_bricks, model_studs, mode, working_folder=None, SAVE_ANNOTATED=False, PLT_ANNOTATED=False, SAVE_JSON=False):
     """
@@ -500,9 +505,7 @@ def predict_brick_dimensions(image_path, model_bricks, model_studs, mode, workin
     
     # 10. Save JSON metadata if requested
     if SAVE_JSON:
-        json_path = os.path.join(working_folder, "inference_metadata.json")
-        with open(json_path, "w") as json_file:
-            json.dump(metadata, json_file, indent=4)
+        save_metadata(metadata, working_folder, output_format="json")
     
     print("Prediction completed.")
 
