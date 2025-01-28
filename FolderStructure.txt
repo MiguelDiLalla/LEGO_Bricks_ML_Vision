@@ -2,7 +2,6 @@
   .gitignore
   FolderStructure.txt
   GenerateStructure.ps1
-  GenerateStructure.py
   kaggle.json
   LICENSE
   PyPl_publish.py
@@ -12,6 +11,11 @@
   setup.py
   - data
     - annotations
+      - export test
+        More than 20 files, summary:
+          .json: 1 files
+          .jpg: 80 files
+          .png: 1 files
       - LabelMe_txt_bricks
         More than 20 files, summary:
           .txt: 1803 files
@@ -34,9 +38,9 @@
           .txt: 2176 files
     - raw
       More than 20 files, summary:
-        .png: 7 files
         .zip: 2 files
         .jpg: 1803 files
+        .png: 7 files
   - dist
     lego_bricks_ml_vision-0.1.3-py3-none-any.whl
     lego_bricks_ml_vision-0.1.3.tar.gz
@@ -79,6 +83,7 @@
     tree_structure.txt
     Utilities_dev.ipynb
     yolov8n.pt
+    - path_to_yolo_txt
   - presentation
     - before_after
     - dataset_samples
@@ -89,23 +94,20 @@
       - 20250123_192838bricks
         - train
           More than 20 files, summary:
-            .csv: 1 files
             .yaml: 1 files
             .0: 1 files
+            .csv: 1 files
             .jpg: 11 files
             .png: 7 files
           - weights
             best20250123_192838t.pt
             last.pt
-        - visualizations
-          loss_curve.png
-          metrics_summary.csv
       - 20250124_165222studs
         - train
           More than 20 files, summary:
-            .csv: 1 files
             .yaml: 1 files
             .0: 1 files
+            .csv: 1 files
             .jpg: 11 files
             .png: 7 files
           - weights
@@ -114,9 +116,9 @@
       - 20250124_170824studs
         - train
           More than 20 files, summary:
-            .csv: 1 files
             .yaml: 1 files
             .0: 1 files
+            .csv: 1 files
             .jpg: 14 files
             .png: 7 files
           - weights
@@ -127,6 +129,7 @@
     pipeline_inference_part1.py
     pipeline_setup.py
     pipeline_train.py
+    pipeline_utils.py
     - __pycache__
       __init__.cpython-312.pyc
       pipeline.cpython-312.pyc
