@@ -19,10 +19,6 @@ def get_latest_training_session(output_dir="regular_yolo_training"):
     session_folders = sorted(glob.glob(os.path.join(output_dir, "*")), reverse=True)
     return session_folders[0] if session_folders else None
 
-def run_dashboard(args):
-    """ Launches the Streamlit dashboard to visualize training results. """
-    os.system("streamlit run scripts/streamlit_dashboard.py")
-
 def run_setup(args):
     """ Handles dataset setup with custom user parameters. """
     
@@ -129,10 +125,6 @@ def main():
     parser = argparse.ArgumentParser(description="LEGO Bricks ML CLI")
     subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
 
-    # Dashboard command
-    dashboard_parser = subparsers.add_parser("run-dashboard", help="Launch the Streamlit dashboard")
-    dashboard_parser.set_defaults(func=run_dashboard)
-
     # Train command
     train_parser = subparsers.add_parser("run-train", help="Train the YOLO model")
     train_parser.add_argument("--epochs", type=int, default=50,
@@ -160,4 +152,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
