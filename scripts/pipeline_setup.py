@@ -25,12 +25,12 @@ def detect_environment():
     pprint({"Detected Environment": environment})
     return environment
 
-
-def setup_environment(base_path="/kaggle/working/output"):
+def setup_environment(dataset_name, base_path="/kaggle/working/output"):
     """
     Configura el entorno según el sistema detectado y prepara el dataset.
 
     Parameters:
+    - dataset_name (str): Nombre del dataset a descargar desde Kaggle.
     - base_path (str): Carpeta base donde se configurará la salida.
 
     Returns:
@@ -39,9 +39,23 @@ def setup_environment(base_path="/kaggle/working/output"):
     environment = detect_environment()
     print(f"\n[INFO] Entorno detectado: {environment.capitalize()}\n")
 
+    dataset_mapping = {
+        "studs": "labeledstuds-lego-bricks",
+        "bricks": "spiled-lego-bricks"
+    }
+    
+    if dataset_name not in dataset_mapping:
+        raise ValueError(f"[ERROR] Dataset '{dataset_name}' no reconocido. Usa 'studs' o 'bricks'.")
+
+    kaggle_dataset = dataset_mapping[dataset_name]
+    
+
     if environment == "kaggle":
-        dataset_path = "/kaggle/input/spiled-lego-bricks"
-        required_folders = ["Images_600x800", "LabelMe_txt_bricks"]
+
+        dataset_path = f"/kaggle/input/{kaggle_dataset}"
+        
+        required_folders = ["images", "YOLO_ready_txt_labels"]
+
         for folder in required_folders:
             full_path = os.path.join(dataset_path, folder)
             if not os.path.exists(full_path):
@@ -49,17 +63,15 @@ def setup_environment(base_path="/kaggle/working/output"):
             print(f"[INFO] Carpeta verificada: {full_path}")
 
         return {
-            "raw_images_path": os.path.join(dataset_path, "Images_600x800"),
-            "raw_labels_path": os.path.join(dataset_path, "LabelMe_txt_bricks"),
+            "raw_images_path": os.path.join(dataset_path, "images"),
+            "raw_labels_path": os.path.join(dataset_path, "YOLO_ready_txt_labels"),
             "output_path": base_path
         }
     elif environment == "colab":
             from google.colab import userdata
             kaggle_path = "kaggle.json"
             if not os.path.exists(kaggle_path):
-                # raise EnvironmentError("[ERROR] Sube tu archivo kaggle.json al entorno Colab en /root/.kaggle/")
                 os.makedirs("/root/.kaggle", exist_ok=True)
-            
             
                 kaggle_user = userdata.get('KaggleUser')
                 kaggle_token = userdata.get('KaggleToken')
@@ -78,14 +90,14 @@ def setup_environment(base_path="/kaggle/working/output"):
                 print("[INFO] Archivo kaggle.json movido a /root/.kaggle/")
             os.chmod("/root/.kaggle/kaggle.json", 0o600)
             os.makedirs("working", exist_ok=True)
-            os.makedirs("working/spiled-lego-bricks", exist_ok=True)
-            os.system("kaggle datasets download -d migueldilalla/spiled-lego-bricks -p working/spiled-lego-bricks --unzip")
+            os.makedirs(f"working/{dataset_mapping[dataset_name]}", exist_ok=True)
+            os.system(f"kaggle datasets download -d migueldilalla/{dataset_mapping[dataset_name]} -p working/{dataset_mapping[dataset_name]} --unzip")
             os.makedirs("/working/output", exist_ok=True)
-            dataset_path = "working/spiled-lego-bricks"
+            dataset_path = f"working/{dataset_mapping[dataset_name]}"
 
             return {
-                "raw_images_path": os.path.join(dataset_path, "Images_600x800"),
-                "raw_labels_path": os.path.join(dataset_path, "LabelMe_txt_bricks"),
+                "raw_images_path": os.path.join(dataset_path, "images"),
+                "raw_labels_path": os.path.join(dataset_path, "YOLO_ready_txt_labels"),
                 "output_path": os.path.join(os.getcwd(), "working", "output")
             }
 
@@ -95,15 +107,16 @@ def setup_environment(base_path="/kaggle/working/output"):
         if not os.path.exists(kaggle_json_path):
             raise EnvironmentError("[ERROR] Archivo kaggle.json no encontrado en ~/.kaggle/")
         os.makedirs("working", exist_ok=True)
-        os.makedirs("working/spiled-lego-bricks", exist_ok=True)
-        if not os.listdir("working/spiled-lego-bricks"):
-            os.system("kaggle datasets download -d migueldilalla/spiled-lego-bricks -p working/spiled-lego-bricks --unzip")
+        os.makedirs(f"working/{dataset_mapping[dataset_name]}", exist_ok=True)
+        if not os.listdir(f"working/{dataset_mapping[dataset_name]}"):
+           print(f"kaggle datasets download -d migueldilalla/{dataset_mapping[dataset_name]} -p working/{dataset_mapping[dataset_name]} --unzip")
+           os.system(f"kaggle datasets download -d migueldilalla/{dataset_mapping[dataset_name]} -p working/{dataset_mapping[dataset_name]} --unzip")
         os.makedirs("working/output", exist_ok=True)
-        dataset_path = "working/spiled-lego-bricks"
+        dataset_path = f"working/{dataset_mapping[dataset_name]}"
 
         return {
-             "raw_images_path": os.path.join(dataset_path, "Images_600x800"),
-            "raw_labels_path": os.path.join(dataset_path, "LabelMe_txt_bricks"),
+            "raw_images_path": os.path.join(dataset_path, "images"),
+            "raw_labels_path": os.path.join(dataset_path, "YOLO_ready_txt_labels"),
             "output_path": os.path.join(os.getcwd(), "working", "output")
         }
     else:
@@ -236,6 +249,10 @@ def augment_data(input_images, input_labels, output_dir, num_augmentations=2):
             continue
 
         image = cv2.imread(img_path)
+        if image is None:
+            print(f"[WARNING] Skipping corrupted image: {img_path}")
+            continue  # Skip this image and move to the next
+        
         bboxes, class_labels = load_labels(label_path)
 
         for i in range(num_augmentations):
@@ -366,11 +383,11 @@ def validate_final_structure(output_dir="/kaggle/working/output"):
     
     pprint({"Validación Final": summary})
 
-def main():
+def main(dataset_name="bricks"):
     """
     Ejecución principal del pipeline.
     """
-    paths = setup_environment()
+    paths = setup_environment(dataset_name=dataset_name)
     pprint({"Rutas Configuradas": paths})
 
     verify_dataset_structure(paths["raw_images_path"], paths["raw_labels_path"])
@@ -394,7 +411,7 @@ def main():
     create_dataset_yaml(
         output_path=os.path.join(paths["output_path"], "dataset"),
         num_classes=1,  # Replace with the actual number of classes
-        class_names=["brick"]  # Add all class names here
+        class_names=[dataset_name[:-1]]  # Add all class names here
     )
 
     validate_final_structure(paths["output_path"])
