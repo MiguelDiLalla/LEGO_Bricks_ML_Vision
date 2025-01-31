@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="lego-vision-cli",
+    name="lego-bricks-ml-vision",
     version="2.0.0",
     packages=find_packages(),
     install_requires=[
@@ -10,7 +10,6 @@ setup(
         "torch",
         "argparse",
         "pyyaml",
-        "shutil",
         "glob2"
     ],
     entry_points={

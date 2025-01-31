@@ -3,7 +3,7 @@ requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "lego-vision-cli"
+name = "lego-bricks-ml-vision"
 version = "2.0.0"
 description = "CLI for managing LEGO Bricks ML pipeline"
 readme = "README.md"
@@ -28,9 +28,7 @@ dependencies = [
     "argparse==1.4.0",
     "logging==0.4.9.6",
     "tqdm==4.66.2",
-    "shutil",
     "pathlib",
-    "platform",
     "datetime",
     "kaggle==1.6.17"
 ]
