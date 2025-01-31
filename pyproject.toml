@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lego-vision-cli"
-version = "1.0.0"
+version = "2.0.0"
 description = "CLI for managing LEGO Bricks ML pipeline"
 readme = "README.md"
 authors = [
