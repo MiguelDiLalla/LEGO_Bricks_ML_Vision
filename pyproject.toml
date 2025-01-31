@@ -13,7 +13,7 @@ authors = [
 license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
-    "torch==2.4.1+cpu",
+    "torch",
     "ultralytics==8.2.99",
     "opencv-python==4.9.0.80",
     "pillow==11.1.0",
