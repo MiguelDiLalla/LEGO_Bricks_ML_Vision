@@ -24,11 +24,8 @@ argparse==1.4.0
 logging==0.4.9.6
 tqdm==4.66.2
 
-# File & System Handling
-shutil
-pathlib
-platform
-datetime
+
+
 
 # Kaggle API
 kaggle==1.6.17
