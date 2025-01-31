@@ -11,23 +11,29 @@ import sys
 # === Configuración Inicial ===
 def detect_environment():
     """
-    Detecta el entorno de ejecución (Docker, Kaggle, Google Colab o Local).
+    Detects the execution environment (Docker, Kaggle, Google Colab, or Local).
 
     Returns:
-    - str: Nombre del entorno detectado.
+    - str: The detected environment name.
     """
-    if os.path.exists("/.dockerenv") or any("docker" in line for line in open("/proc/self/cgroup", "r", encoding="utf-8", errors="ignore")):
-        environment = "docker"
-    elif "google.colab" in sys.modules:
-        environment = "colab"
-    elif os.path.exists("/kaggle"):
-        environment = "kaggle"
-    else:
-        environment = "local"
-    
-    pprint({"Detected Environment": environment})
-    return environment
+    try:
+        if os.path.exists("/.dockerenv"):  # Check for Docker
+            return "docker"
 
+        with open("/proc/self/cgroup", "r", encoding="utf-8", errors="ignore") as f:
+            if any("docker" in line for line in f):
+                return "docker"
+    except FileNotFoundError:
+        pass  # If the file doesn't exist, we are not in Docker
+
+    if "google.colab" in sys.modules:  # Google Colab
+        return "colab"
+
+    if os.path.exists("/kaggle"):  # Kaggle
+        return "kaggle"
+
+    # Default to "local" (including Windows)
+    return "local"
 
 def setup_environment(dataset_name, base_path="/workspace/output"):
     """
