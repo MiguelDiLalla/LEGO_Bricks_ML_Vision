@@ -5,7 +5,7 @@ $outputFile = "FolderStructure.txt"
 $output = [System.Collections.Generic.List[string]]::new()
 
 # Function to recursively process the folder structure
-function Process-Folder {
+function Get-FolderStructure {
     param (
         [string]$folderPath,   # The path of the current folder
         [int]$indentLevel      # Indentation level for readability
@@ -48,12 +48,12 @@ function Process-Folder {
     # Process subdirectories
     $subdirs = Get-ChildItem -Path $folderPath -Directory -ErrorAction SilentlyContinue
     foreach ($subdir in $subdirs) {
-        Process-Folder -folderPath $subdir.FullName -indentLevel ($indentLevel + 2)
+        Get-FolderStructure -folderPath $subdir.FullName -indentLevel ($indentLevel + 2)
     }
 }
 
 # Start processing from the current directory
-Process-Folder -folderPath (Get-Location).Path -indentLevel 0
+Get-FolderStructure -folderPath (Get-Location).Path -indentLevel 0
 
 # Save the output to a file
 $output -join "`n" | Set-Content -Path $outputFile -Encoding UTF8

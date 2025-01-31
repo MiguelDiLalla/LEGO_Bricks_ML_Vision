@@ -1,15 +1,12 @@
 - LEGO_Bricks_ML_Vision
   .gitignore
-  cli.py
   FolderStructure.txt
   GenerateStructure.ps1
   kaggle.json
   LICENSE
-  PyPl_publish.py
-  pyproject.toml
   README.md
+  ReorganizeProject.ps1
   requirements.txt
-  setup.py
   - data
     - annotations
       - export test
@@ -48,6 +45,17 @@
     lego_bricks_ml_vision-0.1.31.tar.gz
     lego_bricks_ml_vision-0.1.32-py3-none-any.whl
     lego_bricks_ml_vision-0.1.32.tar.gz
+  - docker
+    - train
+      Dockerfile
+      pipeline_train_docker.py
+      requeriments-train.txt
+      train_cli.py
+    - utils
+      Dockerfile
+      pipeline-utils_docker.py
+      requirements-utils.txt
+      utils_cli.py
   - docs
     LEGO_Bricks_Identification_Project_Overview.pdf
     LEGO_Bricks_Identification_Project_Technical_Report.pdf
@@ -56,6 +64,13 @@
     Refurbishing_Project_doc.pdf
     Rewind_latex_doc.pdf
   - lego_bricks_ml_vision.egg-info
+    dependency_links.txt
+    entry_points.txt
+    PKG-INFO
+    requires.txt
+    SOURCES.txt
+    top_level.txt
+  - lego_vision_cli.egg-info
     dependency_links.txt
     entry_points.txt
     PKG-INFO
@@ -90,6 +105,8 @@
   - results
     - predictions
     - TrainingSessions
+      FolderStructure_regularYoloTraining.txt
+      FolderStructure.txt
       GenerateStructure.ps1
       - 20250123_192838bricks
         - train
@@ -125,20 +142,26 @@
             best.pt
             last.pt
   - scripts
-    __init__.py
-    pipeline_setup.py
-    pipeline_train.py
-    pipeline_utils.py
     - __pycache__
       __init__.cpython-312.pyc
+      pipeline_setup.cpython-310.pyc
       pipeline.cpython-312.pyc
       visualize_presentation.cpython-312.pyc
     - Legacy_scripts
+      __init__.py
+      cli.py
+      Dockerfile
       Generate_folders_ImageDataProject.py
       organize_files_script.py
       pipeline_inference_part1.py
       pipeline_report_viz.py
+      pipeline_setup.py
+      pipeline_train.py
+      pipeline_utils.py
       pipeline.py
+      PyPl_publish.py
+      pyproject.toml
+      setup.py
       visualize_presentation.py
   - tests
     path_references.json
