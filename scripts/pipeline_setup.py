@@ -11,21 +11,25 @@ import sys
 # === Configuración Inicial ===
 def detect_environment():
     """
-    Detecta el entorno de ejecución (Kaggle, Google Colab o Local).
+    Detecta el entorno de ejecución (Docker, Kaggle, Google Colab o Local).
 
     Returns:
     - str: Nombre del entorno detectado.
     """
-    if "google.colab" in sys.modules:
+    if os.path.exists("/.dockerenv") or any("docker" in line for line in open("/proc/self/cgroup", "r", encoding="utf-8", errors="ignore")):
+        environment = "docker"
+    elif "google.colab" in sys.modules:
         environment = "colab"
     elif os.path.exists("/kaggle"):
         environment = "kaggle"
     else:
         environment = "local"
+    
     pprint({"Detected Environment": environment})
     return environment
 
-def setup_environment(dataset_name, base_path="/kaggle/working/output"):
+
+def setup_environment(dataset_name, base_path="/workspace/output"):
     """
     Configura el entorno según el sistema detectado y prepara el dataset.
 
@@ -43,17 +47,31 @@ def setup_environment(dataset_name, base_path="/kaggle/working/output"):
         "studs": "labeledstuds-lego-bricks",
         "bricks": "spiled-lego-bricks"
     }
-    
+
     if dataset_name not in dataset_mapping:
         raise ValueError(f"[ERROR] Dataset '{dataset_name}' no reconocido. Usa 'studs' o 'bricks'.")
 
     kaggle_dataset = dataset_mapping[dataset_name]
-    
 
-    if environment == "kaggle":
+    if environment == "docker":
+        dataset_path = "/workspace/datasets"
+        os.makedirs(dataset_path, exist_ok=True)
 
+        required_folders = ["images", "YOLO_ready_txt_labels"]
+        for folder in required_folders:
+            full_path = os.path.join(dataset_path, folder)
+            if not os.path.exists(full_path):
+                raise FileNotFoundError(f"[ERROR] Carpeta requerida no encontrada: {full_path}")
+            print(f"[INFO] Carpeta verificada: {full_path}")
+
+        return {
+            "raw_images_path": os.path.join(dataset_path, "images"),
+            "raw_labels_path": os.path.join(dataset_path, "YOLO_ready_txt_labels"),
+            "output_path": base_path
+        }
+
+    elif environment == "kaggle":
         dataset_path = f"/kaggle/input/{kaggle_dataset}"
-        
         required_folders = ["images", "YOLO_ready_txt_labels"]
 
         for folder in required_folders:
@@ -67,50 +85,30 @@ def setup_environment(dataset_name, base_path="/kaggle/working/output"):
             "raw_labels_path": os.path.join(dataset_path, "YOLO_ready_txt_labels"),
             "output_path": base_path
         }
+
     elif environment == "colab":
-            from google.colab import userdata
-            kaggle_path = "kaggle.json"
-            if not os.path.exists(kaggle_path):
-                os.makedirs("/root/.kaggle", exist_ok=True)
-            
-                kaggle_user = userdata.get('KaggleUser')
-                kaggle_token = userdata.get('KaggleToken')
-                if not kaggle_user or not kaggle_token:
-                    raise EnvironmentError("[ERROR] No se encontraron las credenciales de Kaggle en Google Colab.")
-                kaggle_data = {
-                    "username": kaggle_user,
-                    "key": kaggle_token
-                }
-                with open("/root/.kaggle/kaggle.json", "w") as f:
-                    json.dump(kaggle_data, f)
-                    print("[INFO] Credenciales de Kaggle configuradas en Google Colab.")
-            else:
-                os.makedirs("/root/.kaggle", exist_ok=True)
-                shutil.move(kaggle_path, "/root/.kaggle/kaggle.json")
-                print("[INFO] Archivo kaggle.json movido a /root/.kaggle/")
-            os.chmod("/root/.kaggle/kaggle.json", 0o600)
-            os.makedirs("working", exist_ok=True)
-            os.makedirs(f"working/{dataset_mapping[dataset_name]}", exist_ok=True)
-            os.system(f"kaggle datasets download -d migueldilalla/{dataset_mapping[dataset_name]} -p working/{dataset_mapping[dataset_name]} --unzip")
-            os.makedirs("/working/output", exist_ok=True)
-            dataset_path = f"working/{dataset_mapping[dataset_name]}"
+        from google.colab import userdata
+        kaggle_path = "kaggle.json"
+        if not os.path.exists(kaggle_path):
+            os.makedirs("/root/.kaggle", exist_ok=True)
 
-            return {
-                "raw_images_path": os.path.join(dataset_path, "images"),
-                "raw_labels_path": os.path.join(dataset_path, "YOLO_ready_txt_labels"),
-                "output_path": os.path.join(os.getcwd(), "working", "output")
-            }
+            kaggle_user = userdata.get('KaggleUser')
+            kaggle_token = userdata.get('KaggleToken')
+            if not kaggle_user or not kaggle_token:
+                raise EnvironmentError("[ERROR] No se encontraron las credenciales de Kaggle en Google Colab.")
 
-
-    elif environment == "local":
-        kaggle_json_path = os.path.expanduser("~/.kaggle/kaggle.json")
-        if not os.path.exists(kaggle_json_path):
-            raise EnvironmentError("[ERROR] Archivo kaggle.json no encontrado en ~/.kaggle/")
+            kaggle_data = {"username": kaggle_user, "key": kaggle_token}
+            with open("/root/.kaggle/kaggle.json", "w") as f:
+                json.dump(kaggle_data, f)
+                print("[INFO] Credenciales de Kaggle configuradas en Google Colab.")
+        else:
+            os.makedirs("/root/.kaggle", exist_ok=True)
+            shutil.move(kaggle_path, "/root/.kaggle/kaggle.json")
+            print("[INFO] Archivo kaggle.json movido a /root/.kaggle/")
+        os.chmod("/root/.kaggle/kaggle.json", 0o600)
         os.makedirs("working", exist_ok=True)
         os.makedirs(f"working/{dataset_mapping[dataset_name]}", exist_ok=True)
-        if not os.listdir(f"working/{dataset_mapping[dataset_name]}"):
-           print(f"kaggle datasets download -d migueldilalla/{dataset_mapping[dataset_name]} -p working/{dataset_mapping[dataset_name]} --unzip")
-           os.system(f"kaggle datasets download -d migueldilalla/{dataset_mapping[dataset_name]} -p working/{dataset_mapping[dataset_name]} --unzip")
+        os.system(f"kaggle datasets download -d migueldilalla/{dataset_mapping[dataset_name]} -p working/{dataset_mapping[dataset_name]} --unzip")
         os.makedirs("working/output", exist_ok=True)
         dataset_path = f"working/{dataset_mapping[dataset_name]}"
 
@@ -119,12 +117,27 @@ def setup_environment(dataset_name, base_path="/kaggle/working/output"):
             "raw_labels_path": os.path.join(dataset_path, "YOLO_ready_txt_labels"),
             "output_path": os.path.join(os.getcwd(), "working", "output")
         }
+
+    elif environment == "local":
+        kaggle_json_path = os.path.expanduser("~/.kaggle/kaggle.json")
+        if not os.path.exists(kaggle_json_path):
+            raise EnvironmentError("[ERROR] Archivo kaggle.json no encontrado en ~/.kaggle/")
+        os.makedirs("working", exist_ok=True)
+        os.makedirs(f"working/{dataset_mapping[dataset_name]}", exist_ok=True)
+        if not os.listdir(f"working/{dataset_mapping[dataset_name]}"):
+            os.system(f"kaggle datasets download -d migueldilalla/{dataset_mapping[dataset_name]} -p working/{dataset_mapping[dataset_name]} --unzip")
+        os.makedirs("working/output", exist_ok=True)
+        dataset_path = f"working/{dataset_mapping[dataset_name]}"
+
+        return {
+            "raw_images_path": os.path.join(dataset_path, "images"),
+            "raw_labels_path": os.path.join(dataset_path, "YOLO_ready_txt_labels"),
+            "output_path": os.path.join(os.getcwd(), "working", "output")
+        }
+
     else:
-        while True:
-            user_input = input("[PROMPT] No se detectó un entorno. Por favor, escribe 'k' para Kaggle, 'g' para Google Colab, o 'l' para Local: ").strip().lower()
-            if user_input in ["k", "g", "l"]:
-                return setup_environment_custom(user_input, base_path)
-            print("[ERROR] Entrada inválida. Intenta nuevamente.")
+        raise EnvironmentError("[ERROR] No se pudo detectar el entorno correctamente.")
+
 
 def setup_environment_custom(choice, base_path):
     """

@@ -5,13 +5,16 @@ import os
 import yaml
 import glob
 import time
+import shutil
 
 # Ensure Python can find the scripts folder
 sys.path.append("scripts")
 
 from scripts.pipeline_setup import setup_environment, verify_dataset_structure, create_preprocessing_structure, copy_and_partition_data, augment_data, copy_augmented_to_train, create_dataset_yaml, validate_final_structure
-from scripts.pipeline_train import train_model
+from scripts.pipeline_train import train_model, pre_training_cleanup, get_device
 from scripts.pipeline_utils import labelme_to_yolo, convert_keypoints_json, visualize_yolo_annotations, run_inference
+
+
 
 # Configure logging
 log_filename = "cli_execution.log"
@@ -30,16 +33,17 @@ def get_latest_training_session(output_dir="regular_yolo_training"):
     session_folders = sorted(glob.glob(os.path.join(output_dir, "*")), reverse=True)
     return session_folders[0] if session_folders else None
 
-
-
 def run_setup(args):
-    """ Handles dataset setup with custom user parameters. """
+    """Handles dataset setup with custom user parameters."""
     
     start_time = time.time()
+    logging.info("[INFO] Starting dataset setup...")
     paths = setup_environment(dataset_name=args.dataset)
-    logging.info({"Dataset Paths": paths})
+    logging.info("[INFO] Environment setup completed. Paths:")
+    logging.info(paths)
 
     if args.verify_only:
+        logging.info("[INFO] Verifying dataset structure...")
         verify_dataset_structure(paths["raw_images_path"], paths["raw_labels_path"])
         logging.info("[INFO] Dataset verification complete. No modifications were made.")
         return
@@ -57,6 +61,7 @@ def run_setup(args):
                             train_ratio, val_ratio, test_ratio)
 
     if not args.no_augment:
+        logging.info("[INFO] Applying data augmentation...")
         augment_data(
             input_images=os.path.join(paths["output_path"], "dataset/images/train"),
             input_labels=os.path.join(paths["output_path"], "dataset/labels/train"),
@@ -77,12 +82,12 @@ def run_setup(args):
     )
 
     validate_final_structure(paths["output_path"])
-    logging.info("\n[INFO] Dataset setup complete.\n")
+    logging.info("\n[INFO] Dataset setup complete. Ready for training.\n")
     end_time = time.time()
     logging.info(f"[INFO] Execution completed in {end_time - start_time:.2f} seconds.")
 
 def run_train(args):
-    """ Handles model training with user-defined parameters. """
+    """Handles model training with user-defined parameters."""
     
     start_time = time.time()
     dataset_yaml_path = "working/output/dataset/dataset.yaml"
@@ -91,6 +96,9 @@ def run_train(args):
         logging.error("[ERROR] dataset.yaml not found! Run 'cli.py run-setup' first.")
         return
 
+    # Cleanup old training results before starting
+    pre_training_cleanup()
+
     with open(dataset_yaml_path, "r") as f:
         dataset_info = yaml.safe_load(f)
     
@@ -98,6 +106,10 @@ def run_train(args):
     logging.info(f"[INFO] Training on dataset: {dataset_name}")
     
     model_path = args.resume if args.resume else args.model
+
+    # Detect and log the device
+    device = args.device if args.device else get_device()
+    logging.info(f"[INFO] Using device: {device}")
 
     logging.info(f"[INFO] Training Parameters:")
     logging.info(f" - Model: {model_path}")
@@ -114,7 +126,8 @@ def run_train(args):
         batch_size=args.batch_size,
         learning_rate=args.learning_rate,
         momentum=args.momentum,
-        imgsz=args.imgsz
+        imgsz=args.imgsz,
+        device=device
     )
 
     latest_session = get_latest_training_session()
@@ -162,13 +175,36 @@ def run_utils(args):
             return
         logging.info(f"[INFO] Running inference using {args.model} on {args.input_folder}")
         run_inference(args.model, args.input_folder, args.output_folder)
+import shutil
 
-    else:
-        logging.info("[INFO] No action specified. Use --help for available utilities.")
+def run_export_results(args):
+    """Finds and exports the latest training results as a .zip file."""
     
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    logging.info(f"[INFO] Execution completed in {elapsed_time:.2f} seconds.")
+    export_dir = "/app/data/exports/"
+    
+    if not os.path.exists(export_dir) or not os.listdir(export_dir):
+        logging.error("[ERROR] No training results found in the export directory.")
+        return
+    
+    # Find the latest zip archive
+    zip_files = sorted(glob.glob(os.path.join(export_dir, "*.zip")), reverse=True)
+    latest_zip = zip_files[0] if zip_files else None
+    
+    if not latest_zip:
+        logging.error("[ERROR] No zip archives found in the export directory.")
+        return
+    
+    logging.info(f"[INFO] Latest training archive found: {latest_zip}")
+
+    # Copy the archive to user-specified location or provide Docker instructions
+    if args.output:
+        os.makedirs(args.output, exist_ok=True)
+        shutil.copy(latest_zip, args.output)
+        logging.info(f"[INFO] Archive copied to: {args.output}")
+    else:
+        logging.info("[INFO] To retrieve the file in Docker, use:")
+        logging.info(f"docker cp <container_id>:{latest_zip} <destination_path>")
+
 
 def main():
     parser = argparse.ArgumentParser(description="LEGO Bricks ML CLI")
@@ -176,8 +212,37 @@ def main():
     
     subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
 
+    # Train command (define before usage)
+    train_parser = subparsers.add_parser("run-train", help="Train the YOLO model")
+    train_parser.add_argument("--epochs", type=int, default=50,
+                            help="Number of training epochs (default: 50)")
+    train_parser.add_argument("--batch-size", type=int, default=16,
+                            help="Batch size (default: 16)")
+    train_parser.add_argument("--learning-rate", type=float, default=0.001,
+                            help="Initial learning rate (default: 0.001)")
+    train_parser.add_argument("--momentum", type=float, default=0.9,
+                            help="Momentum for optimizer (default: 0.9)")
+    train_parser.add_argument("--imgsz", type=int, default=640,
+                            help="Image size for YOLO training (default: 640)")
+    train_parser.add_argument("--model", type=str, default="yolov8n.pt",
+                            help="Path to the pre-trained YOLO model (default: yolov8n.pt)")
+    train_parser.add_argument("--resume", type=str, help="Resume training from a checkpoint")
+    train_parser.add_argument("--device", type=str, choices=["cpu", "cuda"],
+                            help="Specify device for training ('cpu' or 'cuda'). If not set, auto-detect.")
+    train_parser.set_defaults(func=run_train)
+
+    # Export command (comes after train_parser is defined)
+    export_parser = subparsers.add_parser("export-results", help="Export latest training results as a .zip file")
+    export_parser.add_argument("--output", type=str, help="Specify a destination folder to copy the exported results.")
+    export_parser.set_defaults(func=run_export_results)
+
     # Utilities command
     utils_parser = subparsers.add_parser("run-utils", help="Execute utility functions")
+
+    export_parser = subparsers.add_parser("export-results", help="Export latest training results as a .zip file")
+    export_parser.add_argument("--output", type=str, help="Specify a destination folder to copy the exported results.")
+    export_parser.set_defaults(func=run_export_results)
+
     utils_parser.add_argument("--convert-labels", action="store_true",
                               help="Convert LabelMe JSON to YOLO format")
     utils_parser.add_argument("--convert-keypoints", action="store_true",
@@ -197,11 +262,18 @@ def main():
                               help="Mode for visualization: (1=Single image, 2=Save single, 3=Grid, 4=Save all)")
     utils_parser.add_argument("--dry-run", action="store_true",
                               help="Preview what the command will do without executing it.")
+    train_parser.add_argument("--device", type=str, choices=["cpu", "cuda"],
+                              help="Specify device for training ('cpu' or 'cuda'). If not set, auto-detect.")
+
     
     utils_parser.set_defaults(func=run_utils)
 
     # Parse Arguments
     args = parser.parse_args()
+
+    # Detect and log the training device
+    device = args.device if args.device else get_device()
+    logging.info(f"[INFO] Using device: {device}")
     
     if args.version:
         print("LEGO Bricks ML CLI v1.0.0")

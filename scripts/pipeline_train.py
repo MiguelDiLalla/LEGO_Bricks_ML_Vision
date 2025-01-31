@@ -4,8 +4,13 @@ from ultralytics import YOLO
 from datetime import datetime
 import logging
 from tqdm import tqdm
+import sys
+import shutil
+import zipfile
 
 EPOCAS = 4
+EXPORT_DIR = "/app/data/exports/"
+TRAINING_DIR = "/app/data/training/"
 
 # === Configuración del Logger ===
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -13,17 +18,56 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # === Detección del dispositivo ===
 def get_device():
     """
-    Detecta el dispositivo adecuado para la ejecución.
-
+    Detects the appropriate execution device.
+    
     Returns:
-    - str: Dispositivo a usar ("cpu", "0", "0,1").
+    - "cpu" if no GPU is available.
+    - "cuda:0" if a single GPU is detected (Colab).
+    - "cuda:0,1" if multiple GPUs are available (Kaggle).
     """
-    if os.environ.get('COLAB_GPU') is not None:
-        return "0"  # Colab
-    elif os.path.exists("/kaggle"):  # Kaggle
-        return "0,1"
-    else:
-        return "cpu"  # Local
+    if os.path.exists("/proc/driver/nvidia/version"):
+        cuda_devices = os.environ.get("CUDA_VISIBLE_DEVICES")
+        if os.path.exists("/kaggle"):  # Kaggle supports multiple GPUs
+            return "cuda:0,1" if cuda_devices is None else f"cuda:{cuda_devices}"
+        elif "google.colab" in sys.modules:  # Colab has only 1 GPU
+            return "cuda:0"
+        else:
+            return "cuda" if cuda_devices is None else f"cuda:{cuda_devices}"
+    return "cpu"
+
+
+# === Función para comprimir resultados del entrenamiento ===
+def zip_training_results():
+    """
+    Archiva los resultados del entrenamiento en un archivo zip con timestamp.
+    """
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    archive_name = f"training_results_{timestamp}.zip"
+    archive_path = os.path.join(EXPORT_DIR, archive_name)
+    os.makedirs(EXPORT_DIR, exist_ok=True)
+    
+    with zipfile.ZipFile(archive_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for root, _, files in os.walk(TRAINING_DIR):
+            for file in files:
+                file_path = os.path.join(root, file)
+                zipf.write(file_path, os.path.relpath(file_path, TRAINING_DIR))
+    
+    logging.info(f"[INFO] Resultados del entrenamiento archivados en {archive_path}")
+    return archive_path
+
+# === Limpieza antes del entrenamiento ===
+def pre_training_cleanup():
+    """
+    Verifica si hay sesiones de entrenamiento previas y pregunta si se deben archivar antes de eliminar.
+    """
+    if os.path.exists(TRAINING_DIR) and os.listdir(TRAINING_DIR):
+        user_input = input("¿Deseas exportar los resultados actuales antes de eliminarlos? (Y/N): ")
+        if user_input.strip().lower() == 'y':
+            zip_training_results()
+        
+        shutil.rmtree(TRAINING_DIR)
+        logging.info("[INFO] Sesiones anteriores eliminadas.")
+    os.makedirs(TRAINING_DIR, exist_ok=True)
 
 # === Callback personalizado para barra de progreso ===
 class ProgressBarCallback:
@@ -88,37 +132,22 @@ def objective(trial):
 def train_model(dataset_yaml=None, pretrained_model="yolov8n.pt", epochs=EPOCAS, batch_size=16, learning_rate=0.001, momentum=0.9, imgsz=640):
     """
     Entrena el modelo YOLO con hiperparámetros definidos manualmente.
-
-    Parameters:
-    - dataset_yaml (str): Ruta al archivo dataset.yaml.
-    - pretrained_model (str): Modelo YOLO preentrenado.
-    - epochs (int): Número de épocas para el entrenamiento.
-    - batch_size (int): Tamaño del batch.
-    - learning_rate (float): Tasa de aprendizaje inicial.
-    - momentum (float): Momento para el optimizador.
-    - imgsz (int): Tamaño de las imágenes de entrada.
     """
+    pre_training_cleanup()
     dataset_yaml = dataset_yaml or os.path.join(os.getcwd(), "working", "output", "dataset", "dataset.yaml")
 
     if not os.path.exists(dataset_yaml):
-        logging.error(f"[ERROR] dataset.yaml no encontrado en {dataset_yaml}. Asegúrate de que el pipeline_setup.py lo haya generado.")
+        logging.error(f"[ERROR] dataset.yaml no encontrado en {dataset_yaml}.")
         return
 
     logging.info(f"[INFO] Usando dataset.yaml en: {dataset_yaml}")
-
     model = YOLO(pretrained_model)
-
-    output_dir = f"regular_yolo_training/{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    
+    output_dir = os.path.join(TRAINING_DIR, datetime.now().strftime('%Y%m%d_%H%M%S'))
     os.makedirs(output_dir, exist_ok=True)
-
-    # Registrar el callback de barra de progreso
-    progress_bar = ProgressBarCallback(total_epochs=epochs)
-    model.add_callback("on_train_start", progress_bar.on_train_start)
-    model.add_callback("on_epoch_end", progress_bar.on_epoch_end)
-    model.add_callback("on_train_end", progress_bar.on_train_end)
-
+    
     try:
-        logging.info("[INFO] Iniciando entrenamiento regular...")
+        logging.info("[INFO] Iniciando entrenamiento...")
         model.train(
             data=dataset_yaml,
             epochs=epochs,
@@ -133,6 +162,7 @@ def train_model(dataset_yaml=None, pretrained_model="yolov8n.pt", epochs=EPOCAS,
         logging.info(f"[INFO] Entrenamiento completado. Resultados guardados en {output_dir}.")
     except Exception as e:
         logging.error(f"[ERROR] Error durante el entrenamiento: {e}")
+
 
 # === Integración de Optuna en el Pipeline ===
 def run_optuna_study(dataset_yaml=None, n_trials=20):
@@ -189,7 +219,8 @@ def main(optuna_mode=False):
     if optuna_mode:
         run_optuna_study(dataset_yaml, n_trials=20)
     else:
-        train_model(dataset_yaml, imgsz=640)  # Tamaño de imagen predeterminado
+        dataset_yaml = os.path.join(os.getcwd(), "working", "output", "dataset", "dataset.yaml")
+        train_model(dataset_yaml, imgsz=640)
 
 if __name__ == "__main__":
     main(optuna_mode=False)
