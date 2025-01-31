@@ -1,12 +1,12 @@
 - LEGO_Bricks_ML_Vision
-  .gitignore
-  FolderStructure.txt
-  GenerateStructure.ps1
-  kaggle.json
-  LICENSE
-  README.md
-  ReorganizeProject.ps1
-  requirements.txt
+  .gitignore (modified 10239.8 minutes ago)
+  FolderStructure.txt (modified 1.5 minutes ago)
+  GenerateStructure.ps1 (modified 4.6 minutes ago)
+  kaggle.json (modified 16905 minutes ago)
+  LICENSE (modified 17166.3 minutes ago)
+  README.md (modified 11239.8 minutes ago)
+  ReorganizeProject.ps1 (modified 23.7 minutes ago)
+  requirements.txt (modified 165.7 minutes ago)
   - data
     - annotations
       - export test
@@ -27,7 +27,7 @@
         More than 20 files, summary:
           .json: 1309 files
     - processed
-      Studs_dataset.zip
+      Studs_dataset.zip (modified 10169.6 minutes ago)
       - Cropped_bricks
         More than 20 files, summary:
           .jpg: 2176 files
@@ -39,65 +39,66 @@
         .png: 7 files
         .jpg: 1803 files
   - dist
-    lego_bricks_ml_vision-0.1.3-py3-none-any.whl
-    lego_bricks_ml_vision-0.1.3.tar.gz
-    lego_bricks_ml_vision-0.1.31-py3-none-any.whl
-    lego_bricks_ml_vision-0.1.31.tar.gz
-    lego_bricks_ml_vision-0.1.32-py3-none-any.whl
-    lego_bricks_ml_vision-0.1.32.tar.gz
+    lego_bricks_ml_vision-0.1.3-py3-none-any.whl (modified 16912.3 minutes ago)
+    lego_bricks_ml_vision-0.1.3.tar.gz (modified 16912.4 minutes ago)
+    lego_bricks_ml_vision-0.1.31-py3-none-any.whl (modified 16879.5 minutes ago)
+    lego_bricks_ml_vision-0.1.31.tar.gz (modified 16879.7 minutes ago)
+    lego_bricks_ml_vision-0.1.32-py3-none-any.whl (modified 16870.8 minutes ago)
+    lego_bricks_ml_vision-0.1.32.tar.gz (modified 16870.9 minutes ago)
   - docker
     - train
-      Dockerfile
-      pipeline_train_docker.py
-      requeriments-train.txt
-      train_cli.py
+      Dockerfile (modified 37.1 minutes ago)
+      Dockerfile.txt (modified 37.1 minutes ago)
+      pipeline_train_docker.py (modified 29.6 minutes ago)
+      requeriments-train.txt (modified 19.8 minutes ago)
+      train_cli.py (modified 61 minutes ago)
     - utils
-      Dockerfile
-      pipeline-utils_docker.py
-      requirements-utils.txt
-      utils_cli.py
+      Dockerfile (modified 23.5 minutes ago)
+      pipeline-utils_docker.py (modified 20.8 minutes ago)
+      requirements-utils.txt (modified 23.5 minutes ago)
+      utils_cli.py (modified 23.5 minutes ago)
   - docs
-    LEGO_Bricks_Identification_Project_Overview.pdf
-    LEGO_Bricks_Identification_Project_Technical_Report.pdf
-    LEGO_Bricks_Project_Miguel_Di_Lalla.md
-    Refurbishing_Project_doc_withCODE.pdf
-    Refurbishing_Project_doc.pdf
-    Rewind_latex_doc.pdf
+    LEGO_Bricks_Identification_Project_Overview.pdf (modified 17211.7 minutes ago)
+    LEGO_Bricks_Identification_Project_Technical_Report.pdf (modified 17211.7 minutes ago)
+    LEGO_Bricks_Project_Miguel_Di_Lalla.md (modified 19072.6 minutes ago)
+    Refurbishing_Project_doc_withCODE.pdf (modified 17211.7 minutes ago)
+    Refurbishing_Project_doc.pdf (modified 17211.7 minutes ago)
+    Rewind_latex_doc.pdf (modified 17211.7 minutes ago)
   - lego_bricks_ml_vision.egg-info
-    dependency_links.txt
-    entry_points.txt
-    PKG-INFO
-    requires.txt
-    SOURCES.txt
-    top_level.txt
+    dependency_links.txt (modified 185.5 minutes ago)
+    entry_points.txt (modified 185.5 minutes ago)
+    PKG-INFO (modified 185.5 minutes ago)
+    requires.txt (modified 185.5 minutes ago)
+    SOURCES.txt (modified 185.5 minutes ago)
+    top_level.txt (modified 185.5 minutes ago)
   - lego_vision_cli.egg-info
-    dependency_links.txt
-    entry_points.txt
-    PKG-INFO
-    requires.txt
-    SOURCES.txt
-    top_level.txt
+    dependency_links.txt (modified 194.5 minutes ago)
+    entry_points.txt (modified 194.5 minutes ago)
+    PKG-INFO (modified 194.5 minutes ago)
+    requires.txt (modified 194.5 minutes ago)
+    SOURCES.txt (modified 194.5 minutes ago)
+    top_level.txt (modified 194.5 minutes ago)
   - models
     - checkpoints
-      Brick_Model_best20250123_192838t.pt
-      Stud_Model_best20250124_170824.pt
-      yolov8n.pt
+      Brick_Model_best20250123_192838t.pt (modified 11444.8 minutes ago)
+      Stud_Model_best20250124_170824.pt (modified 10127.7 minutes ago)
+      yolov8n.pt (modified 19072.6 minutes ago)
       - Legacy_Models
-        Stud_Model_best20250124_165222.pt
-        YOLO_LegoBrick_Detectron_v0.pt
-        YOLOdetectron_LegoBrick_yolov8n_20241029_175720.pt
-        YOLOdetectron_Stud_yolov8n_20241030_151507.pt
+        Stud_Model_best20250124_165222.pt (modified 10160.4 minutes ago)
+        YOLO_LegoBrick_Detectron_v0.pt (modified 19070 minutes ago)
+        YOLOdetectron_LegoBrick_yolov8n_20241029_175720.pt (modified 19070 minutes ago)
+        YOLOdetectron_Stud_yolov8n_20241030_151507.pt (modified 19070 minutes ago)
     - final
   - notebooks
-    LEGO_Bricks_Identification_Project_Overview.ipynb
-    LEGO_Bricks_Identification_Project_Technical_Report.ipynb
-    LEGO_Bricks_Project_Miguel_Di_Lalla.ipynb
-    Technical_Report.ipynb
-    Technical_Report.md
-    TrainTest.ipynb
-    tree_structure.txt
-    Utilities_dev.ipynb
-    yolov8n.pt
+    LEGO_Bricks_Identification_Project_Overview.ipynb (modified 17211.7 minutes ago)
+    LEGO_Bricks_Identification_Project_Technical_Report.ipynb (modified 16915.3 minutes ago)
+    LEGO_Bricks_Project_Miguel_Di_Lalla.ipynb (modified 19072.6 minutes ago)
+    Technical_Report.ipynb (modified 16860.7 minutes ago)
+    Technical_Report.md (modified 16952.9 minutes ago)
+    TrainTest.ipynb (modified 13180.6 minutes ago)
+    tree_structure.txt (modified 11402.5 minutes ago)
+    Utilities_dev.ipynb (modified 4.7 minutes ago)
+    yolov8n.pt (modified 15529.8 minutes ago)
   - presentation
     - before_after
     - dataset_samples
@@ -105,9 +106,9 @@
   - results
     - predictions
     - TrainingSessions
-      FolderStructure_regularYoloTraining.txt
-      FolderStructure.txt
-      GenerateStructure.ps1
+      FolderStructure_regularYoloTraining.txt (modified 2104.7 minutes ago)
+      FolderStructure.txt (modified 139.1 minutes ago)
+      GenerateStructure.ps1 (modified 2107.8 minutes ago)
       - 20250123_192838bricks
         - train
           More than 20 files, summary:
@@ -117,8 +118,8 @@
             .0: 1 files
             .yaml: 1 files
           - weights
-            best20250123_192838t.pt
-            last.pt
+            best20250123_192838t.pt (modified 11444.8 minutes ago)
+            last.pt (modified 11444.8 minutes ago)
       - 20250124_165222studs
         - train
           More than 20 files, summary:
@@ -128,8 +129,8 @@
             .0: 1 files
             .yaml: 1 files
           - weights
-            best.pt
-            last.pt
+            best.pt (modified 10160.4 minutes ago)
+            last.pt (modified 10160.4 minutes ago)
       - 20250124_170824studs
         - train
           More than 20 files, summary:
@@ -139,32 +140,32 @@
             .0: 1 files
             .yaml: 1 files
           - weights
-            best.pt
-            last.pt
+            best.pt (modified 10127.7 minutes ago)
+            last.pt (modified 10127.7 minutes ago)
   - scripts
     - __pycache__
-      __init__.cpython-312.pyc
-      pipeline_setup.cpython-310.pyc
-      pipeline.cpython-312.pyc
-      visualize_presentation.cpython-312.pyc
+      __init__.cpython-312.pyc (modified 16883.9 minutes ago)
+      pipeline_setup.cpython-310.pyc (modified 183.1 minutes ago)
+      pipeline.cpython-312.pyc (modified 16883.9 minutes ago)
+      visualize_presentation.cpython-312.pyc (modified 16883.9 minutes ago)
     - Legacy_scripts
-      __init__.py
-      cli.py
-      Dockerfile
-      Generate_folders_ImageDataProject.py
-      organize_files_script.py
-      pipeline_inference_part1.py
-      pipeline_report_viz.py
-      pipeline_setup.py
-      pipeline_train.py
-      pipeline_utils.py
-      pipeline.py
-      PyPl_publish.py
-      pyproject.toml
-      setup.py
-      visualize_presentation.py
+      __init__.py (modified 16922.5 minutes ago)
+      cli.py (modified 280.4 minutes ago)
+      Dockerfile (modified 1133.1 minutes ago)
+      Generate_folders_ImageDataProject.py (modified 17211.7 minutes ago)
+      organize_files_script.py (modified 17211.7 minutes ago)
+      pipeline_inference_part1.py (modified 10231.1 minutes ago)
+      pipeline_report_viz.py (modified 11389.4 minutes ago)
+      pipeline_setup.py (modified 173.9 minutes ago)
+      pipeline_train.py (modified 278.8 minutes ago)
+      pipeline_utils.py (modified 4196.6 minutes ago)
+      pipeline.py (modified 17008.1 minutes ago)
+      PyPl_publish.py (modified 16915.5 minutes ago)
+      pyproject.toml (modified 189.7 minutes ago)
+      setup.py (modified 189.8 minutes ago)
+      visualize_presentation.py (modified 17002.9 minutes ago)
   - tests
-    path_references.json
+    path_references.json (modified 19066.2 minutes ago)
     - annotations
       More than 20 files, summary:
         .jpg: 527 files

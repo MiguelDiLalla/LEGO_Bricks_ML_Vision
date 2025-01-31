@@ -39,9 +39,10 @@ function Get-FolderStructure {
             $output.Add("$indent    ${ext}: $($fileTypeCounts[$ext]) files")
         }
     } else {
-        # List all files if there are 20 or fewer
+        # List all files if there are 20 or fewer, including last modified time
         foreach ($file in $files) {
-            $output.Add("$indent  $($file.Name)")
+            $minutesAgo = [math]::Round((New-TimeSpan -Start $file.LastWriteTime -End (Get-Date)).TotalMinutes, 1)
+            $output.Add("$indent  $($file.Name) (modified $minutesAgo minutes ago)")
         }
     }
 
