@@ -37,9 +37,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/your-repo"
-Documentation = "https://github.com/your-repo/docs"
-Repository = "https://github.com/your-repo"
+Homepage = "https://github.com/MiguelDiLalla"
+Documentation = "https://github.com/MiguelDiLalla/LEGO_Bricks_ML_Vision/blob/main/README.md"
+Repository = "https://github.com/MiguelDiLalla/LEGO_Bricks_ML_Vision"
 
 [project.scripts]
 lego-setup = "scripts.pipeline_setup:main"
