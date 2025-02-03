@@ -16,4 +16,3 @@ glob2==0.7
 # CLI & Logging
 argparse==1.4.0
 tqdm==4.66.2
-logging==0.4.9.6

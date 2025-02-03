@@ -28,6 +28,11 @@ def main():
     elif args.classify_studs:
         command.extend(["--classify-studs", args.classify_studs])
     
+    # Ensure Kaggle authentication is set up before running any command
+    if not os.path.exists("/root/.kaggle/kaggle.json"):
+        logging.error("[ERROR] Kaggle API credentials not found. Make sure the secret is properly mounted.")
+        return
+    
     logging.info(f"[INFO] Executing command: {' '.join(command)}")
     subprocess.run(command, check=True)
 

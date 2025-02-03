@@ -10,13 +10,20 @@ RUN apt update && apt install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements file
-COPY requeriments-train.txt ./requirements.txt
+COPY requirements-utils.txt ./requirements.txt
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Set up Kaggle authentication
+RUN mkdir -p /root/.kaggle && \
+    if [ -f "/run/secrets/kaggle_secret" ]; then \
+        cp /run/secrets/kaggle_secret /root/.kaggle/kaggle.json && \
+        chmod 600 /root/.kaggle/kaggle.json; \
+    fi
+
 # Copy utility scripts
-COPY pipeline_utils_docker.py ./
+COPY pipeline-utils_docker.py ./
 COPY utils_cli.py ./
 
 # Ensure proper execution permissions
