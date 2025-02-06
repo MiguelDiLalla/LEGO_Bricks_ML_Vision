@@ -9,7 +9,6 @@ import requests
 from datetime import datetime
 from ultralytics import YOLO
 
-
 # === Setup Logging ===
 logging.basicConfig(
     level=logging.INFO,
@@ -93,7 +92,29 @@ def download_dataset(mode):
     logging.info(f"Dataset ready: Images -> {images_path}, Labels -> {labels_path}")
     return images_path, labels_path
 
-
+def copy_user_dataset(images_path, labels_path, mode):
+    """
+    Copies user-provided dataset into container's internal dataset folder.
+    
+    Args:
+        images_path (str): Path to user-provided image folder.
+        labels_path (str): Path to user-provided label folder.
+        mode (str): 'bricks' or 'studs' to define destination folder.
+    """
+    target_path = os.path.join(DATA_DIR, mode)
+    os.makedirs(target_path, exist_ok=True)
+    
+    img_target = os.path.join(target_path, "images")
+    lbl_target = os.path.join(target_path, "labels")
+    os.makedirs(img_target, exist_ok=True)
+    os.makedirs(lbl_target, exist_ok=True)
+    
+    for file in os.listdir(images_path):
+        shutil.copy(os.path.join(images_path, file), img_target)
+    for file in os.listdir(labels_path):
+        shutil.copy(os.path.join(labels_path, file), lbl_target)
+    
+    logging.info(f"Dataset copied to: {target_path}")
 
 def parse_args():
     """Parses command-line arguments for the pipeline."""
@@ -122,17 +143,18 @@ def main():
     # 2️⃣ Dataset Handling
     if args.images and args.labels:
         logging.info("Using user-provided dataset.")
-        images_path, labels_path = args.images, args.labels
+        copy_user_dataset(args.images, args.labels, args.mode)
     else:
         logging.info("Downloading dataset from GitHub repository...")
-        images_path, labels_path = download_dataset(args.mode)
+        download_dataset(args.mode)
     
     # Validate dataset integrity
-    validate_dataset(images_path, labels_path)
+    validate_dataset(args.mode)
     
     # 3️⃣ Preprocessing & Augmentations
     dataset_dir = create_dataset_structure()
-    split_dataset(images_path, labels_path, dataset_dir)
+    split_dataset(os.path.join(DATA_DIR, args.mode, "images"),
+                  os.path.join(DATA_DIR, args.mode, "labels"), dataset_dir)
     augment_data(os.path.join(dataset_dir, "dataset/images/train"),
                  os.path.join(dataset_dir, "dataset/labels/train"),
                  dataset_dir)
