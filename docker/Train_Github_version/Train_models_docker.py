@@ -348,6 +348,69 @@ def train_model(dataset_yaml, output_dir, device, model_type, epochs=20, batch_s
     
     logging.info(f"Training completed. Results saved in {output_dir}")
 
+def export_logs(log_file=LOG_FILE, output_format="json"):
+    """
+    Exports logs in the specified format.
+    
+    Args:
+        log_file (str): Path to the log file.
+        output_format (str): Format to export ('json' or 'txt').
+    
+    Returns:
+        str: Path to the exported log file.
+    """
+    if not os.path.exists(log_file):
+        logging.warning("No log file found to export.")
+        return None
+    
+    export_filename = f"logs_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{output_format}"
+    export_path = os.path.join(EXPORT_DIR, export_filename)
+    os.makedirs(EXPORT_DIR, exist_ok=True)
+    
+    if output_format == "json":
+        log_entries = []
+        with open(log_file, "r") as f:
+            for line in f:
+                parts = line.strip().split(" - ", 2)
+                if len(parts) == 3:
+                    log_entries.append({"timestamp": parts[0], "level": parts[1], "message": parts[2]})
+        with open(export_path, "w") as f:
+            json.dump(log_entries, f, indent=4)
+    else:
+        shutil.copy(log_file, export_path)
+    
+    logging.info(f"Logs exported to {export_path}")
+    return export_path
+
+def zip_training_results(training_dir):
+    """
+    Compresses the training results into a timestamped ZIP file for easy retrieval.
+    
+    Args:
+        training_dir (str): Path to the training results directory.
+    
+    Returns:
+        str: Path to the generated ZIP archive.
+    """
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    zip_filename = f"training_results_{timestamp}.zip"
+    zip_path = os.path.join(EXPORT_DIR, zip_filename)
+    
+    os.makedirs(EXPORT_DIR, exist_ok=True)
+    
+    # Export logs to JSON before zipping
+    log_export_path = export_logs()
+    if log_export_path:
+        shutil.copy(log_export_path, training_dir)
+    
+    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for root, _, files in os.walk(training_dir):
+            for file in files:
+                file_path = os.path.join(root, file)
+                zipf.write(file_path, os.path.relpath(file_path, training_dir))
+    
+    logging.info(f"Training results archived at: {zip_path}")
+    return zip_path
 
 def parse_args():
     """Parses command-line arguments for the pipeline."""
