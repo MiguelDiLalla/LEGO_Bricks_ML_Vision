@@ -355,6 +355,7 @@ def parse_args():
     parser.add_argument("--images", type=str, default=None, help="Path to user-provided image folder")
     parser.add_argument("--labels", type=str, default=None, help="Path to user-provided label folder")
     parser.add_argument("--mode", type=str, choices=["bricks", "studs"], required=True, help="Training mode: 'bricks' or 'studs'")
+    parser.add_argument("--model", type=str, choices=["base", "bricks", "studs"], required=True, help="Model type: 'base', 'bricks', or 'studs'")
     parser.add_argument("--epochs", type=int, default=20, help="Number of training epochs")
     parser.add_argument("--batch-size", type=int, default=16, help="Batch size for training")
     return parser.parse_args()
@@ -397,7 +398,7 @@ def main():
     os.makedirs(model_output_dir, exist_ok=True)
     logging.info("Starting YOLO training...")
     train_model(os.path.join(dataset_dir, "dataset/dataset.yaml"), model_output_dir, device,
-                epochs=args.epochs, batch_size=args.batch_size)
+                args.model, epochs=args.epochs, batch_size=args.batch_size)
     
     # 5️⃣ Post-Processing
     zip_training_results(model_output_dir)
