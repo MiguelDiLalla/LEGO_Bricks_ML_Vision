@@ -92,6 +92,35 @@ def download_dataset(mode):
     logging.info(f"Dataset ready: Images -> {images_path}, Labels -> {labels_path}")
     return images_path, labels_path
 
+def validate_dataset(mode):
+    """
+    Validates dataset integrity by checking image-label parity and file integrity.
+    
+    Args:
+        mode (str): 'bricks' or 'studs', defining dataset location.
+    """
+    dataset_path = os.path.join(DATA_DIR, mode)
+    images_path = os.path.join(dataset_path, "images")
+    labels_path = os.path.join(dataset_path, "labels")
+    
+    if not os.path.exists(images_path) or not os.path.exists(labels_path):
+        logging.error(f"Missing required dataset folders in {dataset_path}.")
+        sys.exit(1)
+    
+    image_files = sorted([f for f in os.listdir(images_path) if f.endswith(".jpg")])
+    label_files = sorted([f for f in os.listdir(labels_path) if f.endswith(".txt")])
+    
+    if len(image_files) != len(label_files):
+        logging.error("Image-label count mismatch. Ensure every image has a corresponding label.")
+        sys.exit(1)
+    
+    for img, lbl in zip(image_files, label_files):
+        if os.path.splitext(img)[0] != os.path.splitext(lbl)[0]:
+            logging.error(f"Mismatched pair: {img} and {lbl}")
+            sys.exit(1)
+    
+    logging.info(f"Dataset validation successful for mode: {mode}")
+
 def copy_user_dataset(images_path, labels_path, mode):
     """
     Copies user-provided dataset into container's internal dataset folder.
@@ -115,6 +144,8 @@ def copy_user_dataset(images_path, labels_path, mode):
         shutil.copy(os.path.join(labels_path, file), lbl_target)
     
     logging.info(f"Dataset copied to: {target_path}")
+
+
 
 def parse_args():
     """Parses command-line arguments for the pipeline."""
