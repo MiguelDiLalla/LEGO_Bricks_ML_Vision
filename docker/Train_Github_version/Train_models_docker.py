@@ -164,6 +164,68 @@ def copy_user_dataset(images_path, labels_path, mode):
     
     logging.info(f"Dataset copied to: {target_path}")
 
+def split_dataset(images_path, labels_path, output_dir):
+    """
+    Splits the dataset into train, validation, and test sets, moves them to the corresponding folders,
+    and generates the dataset.yaml file for YOLO training.
+
+    Args:
+        images_path (str): Path to the images folder.
+        labels_path (str): Path to the labels folder.
+        output_dir (str): Path to the preprocessed dataset directory.
+    """
+    train_img_dir = os.path.join(output_dir, "dataset/images/train")
+    val_img_dir = os.path.join(output_dir, "dataset/images/val")
+    test_img_dir = os.path.join(output_dir, "dataset/images/test")
+    train_lbl_dir = os.path.join(output_dir, "dataset/labels/train")
+    val_lbl_dir = os.path.join(output_dir, "dataset/labels/val")
+    test_lbl_dir = os.path.join(output_dir, "dataset/labels/test")
+    
+    # Get sorted list of images and corresponding labels
+    images = sorted([f for f in os.listdir(images_path) if f.endswith(".jpg")])
+    labels = sorted([f for f in os.listdir(labels_path) if f.endswith(".txt")])
+    
+    if len(images) != len(labels):
+        logging.error("Image-label count mismatch.")
+        sys.exit(1)
+    
+    image_paths = [os.path.join(images_path, img) for img in images]
+    label_paths = [os.path.join(labels_path, lbl) for lbl in labels]
+    
+    # Train/val/test split (70/20/10)
+    train_imgs, temp_imgs, train_lbls, temp_lbls = train_test_split(image_paths, label_paths, test_size=0.3, random_state=42)
+    val_imgs, test_imgs, val_lbls, test_lbls = train_test_split(temp_imgs, temp_lbls, test_size=0.33, random_state=42)
+    
+    # Move files into correct directories
+    for img, lbl in zip(train_imgs, train_lbls):
+        shutil.move(img, train_img_dir)
+        shutil.move(lbl, train_lbl_dir)
+    for img, lbl in zip(val_imgs, val_lbls):
+        shutil.move(img, val_img_dir)
+        shutil.move(lbl, val_lbl_dir)
+    for img, lbl in zip(test_imgs, test_lbls):
+        shutil.move(img, test_img_dir)
+        shutil.move(lbl, test_lbl_dir)
+    
+    # Create dataset.yaml
+    dataset_yaml = {
+        "path": output_dir,
+        "train": os.path.join(output_dir, "dataset/images/train"),
+        "val": os.path.join(output_dir, "dataset/images/val"),
+        "nc": 1,  # Adjust according to dataset class count
+        "names": ["brick"],  # Adjust class name accordingly
+    }
+    yaml_path = os.path.join(output_dir, "dataset/dataset.yaml")
+    with open(yaml_path, "w") as f:
+        yaml.dump(dataset_yaml, f, default_flow_style=False)
+    
+    logging.info(f"Dataset split complete. YAML saved at: {yaml_path}")
+    
+    # Optionally remove original dataset directory
+    shutil.rmtree(images_path)
+    shutil.rmtree(labels_path)
+    logging.info("Original dataset folders removed after preprocessing.")
+
 
 
 def parse_args():
