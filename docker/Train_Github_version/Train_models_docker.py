@@ -4,6 +4,8 @@ import shutil
 import sys
 import argparse
 import torch
+import zipfile
+import requests
 from datetime import datetime
 from ultralytics import YOLO
 
@@ -17,6 +19,9 @@ logging.basicConfig(
         logging.FileHandler("/app/data/pipeline_log.txt", mode="w")  # Save logs inside container
     ]
 )
+
+GITHUB_REPO = "https://github.com/MiguelDiLalla/LEGO_Bricks_ML_Vision/raw/main/presentation/Datasets_Compress"
+DATA_DIR = "/app/data/datasets"
 
 def detect_hardware():
     """
@@ -37,6 +42,58 @@ def detect_hardware():
     
     logging.warning("No GPU or MPS device detected. Falling back to CPU.")
     return "cpu"
+
+def download_dataset(mode):
+    """
+    Downloads and extracts the selected dataset from GitHub.
+    
+    Args:
+        mode (str): 'bricks' or 'studs', determining which dataset to fetch.
+    
+    Returns:
+        tuple: (images_path, labels_path) for further processing.
+    """
+    dataset_filename = "LegoBricks_Dataset.zip" if mode == "bricks" else "BrickStuds_Dataset.zip"
+    dataset_url = f"{GITHUB_REPO}/{dataset_filename}"
+    dataset_path = os.path.join(DATA_DIR, dataset_filename)
+    extract_path = os.path.join(DATA_DIR, mode)
+    
+    os.makedirs(DATA_DIR, exist_ok=True)
+    logging.info(f"Downloading {dataset_filename} from GitHub...")
+    
+    try:
+        response = requests.get(dataset_url, stream=True)
+        response.raise_for_status()
+        
+        with open(dataset_path, 'wb') as file:
+            for chunk in response.iter_content(chunk_size=8192):
+                file.write(chunk)
+        logging.info(f"Dataset downloaded: {dataset_path}")
+    except requests.RequestException as e:
+        logging.error(f"Dataset download failed: {e}")
+        sys.exit(1)
+    
+    logging.info("Extracting dataset...")
+    with zipfile.ZipFile(dataset_path, 'r') as zip_ref:
+        zip_ref.extractall(extract_path)
+    logging.info(f"Dataset extracted to: {extract_path}")
+    
+    # Detect image and label folders
+    images_path, labels_path = None, None
+    for root, dirs, files in os.walk(extract_path):
+        if any(f.endswith('.jpg') for f in files):
+            images_path = root
+        elif any(f.endswith('.txt') for f in files):
+            labels_path = root
+    
+    if not images_path or not labels_path:
+        logging.error("Failed to locate images or labels in extracted dataset.")
+        sys.exit(1)
+    
+    logging.info(f"Dataset ready: Images -> {images_path}, Labels -> {labels_path}")
+    return images_path, labels_path
+
+
 
 def parse_args():
     """Parses command-line arguments for the pipeline."""
