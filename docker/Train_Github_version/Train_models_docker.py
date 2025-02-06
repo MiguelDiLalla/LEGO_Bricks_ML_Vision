@@ -229,7 +229,54 @@ def split_dataset(images_path, labels_path, output_di, mode):
     shutil.rmtree(labels_path)
     logging.info("Original dataset folders removed after preprocessing.")
 
-
+def augment_data(images_path, labels_path, output_dir, num_augmentations=2):
+    """
+    Applies augmentations to training images and saves the augmented data.
+    
+    Args:
+        images_path (str): Path to the training images folder.
+        labels_path (str): Path to the training labels folder.
+        output_dir (str): Path to the dataset preprocessing directory.
+        num_augmentations (int): Number of augmentations per image (default: 2).
+    """
+    aug_images_dir = os.path.join(output_dir, "dataset/images/train")
+    aug_labels_dir = os.path.join(output_dir, "dataset/labels/train")
+    
+    transform = A.Compose([
+        A.HorizontalFlip(p=0.5),
+        A.RandomBrightnessContrast(p=0.2),
+        A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.05, rotate_limit=15, p=0.5),
+        A.Resize(height=640, width=640),
+    ], bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
+    
+    images = sorted([f for f in os.listdir(images_path) if f.endswith(".jpg")])
+    for img_file in images:
+        img_path = os.path.join(images_path, img_file)
+        label_path = os.path.join(labels_path, img_file.replace(".jpg", ".txt"))
+        
+        if not os.path.exists(label_path):
+            continue
+        
+        image = cv2.imread(img_path)
+        if image is None:
+            logging.warning(f"Skipping corrupted image: {img_path}")
+            continue
+        
+        bboxes, class_labels = load_labels(label_path)
+        
+        for i in range(num_augmentations):
+            augmented = transform(image=image, bboxes=bboxes, class_labels=class_labels)
+            aug_image = augmented["image"]
+            aug_bboxes = augmented["bboxes"]
+            aug_labels = augmented["class_labels"]
+            
+            aug_image_path = os.path.join(aug_images_dir, f"{img_file.split('.')[0]}_aug{i}.jpg")
+            cv2.imwrite(aug_image_path, aug_image)
+            
+            aug_label_path = os.path.join(aug_labels_dir, f"{img_file.split('.')[0]}_aug{i}.txt")
+            save_labels(aug_label_path, aug_bboxes, aug_labels)
+    
+    logging.info("Data augmentation completed.")
 
 def parse_args():
     """Parses command-line arguments for the pipeline."""
