@@ -7,6 +7,7 @@ import torch
 import zipfile
 import requests
 import yaml
+import json
 import albumentations as A
 import cv2
 from datetime import datetime
@@ -14,12 +15,13 @@ from sklearn.model_selection import train_test_split
 from ultralytics import YOLO
 
 # === Setup Logging ===
+LOG_FILE = "/app/data/pipeline_log.txt"
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),  # Print logs to console
-        logging.FileHandler("/app/data/pipeline_log.txt", mode="w")  # Save logs inside container
+        logging.FileHandler(LOG_FILE, mode="w")  # Save logs inside container
     ]
 )
 
@@ -27,6 +29,7 @@ GITHUB_REPO = "https://github.com/MiguelDiLalla/LEGO_Bricks_ML_Vision/raw/main/p
 DATA_DIR = "/app/data/datasets"
 PREPROCESS_DIR = "/app/data/preprocessed"
 MODEL_REPO = "https://github.com/MiguelDiLalla/LEGO_Bricks_ML_Vision/raw/main/models"
+EXPORT_DIR = "/app/data/exports"
 
 AVAILABLE_MODELS = {
     "base": "yolov8n.pt",
