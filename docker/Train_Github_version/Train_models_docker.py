@@ -164,7 +164,7 @@ def copy_user_dataset(images_path, labels_path, mode):
     
     logging.info(f"Dataset copied to: {target_path}")
 
-def split_dataset(images_path, labels_path, output_dir):
+def split_dataset(images_path, labels_path, output_di, mode):
     """
     Splits the dataset into train, validation, and test sets, moves them to the corresponding folders,
     and generates the dataset.yaml file for YOLO training.
@@ -213,7 +213,7 @@ def split_dataset(images_path, labels_path, output_dir):
         "train": os.path.join(output_dir, "dataset/images/train"),
         "val": os.path.join(output_dir, "dataset/images/val"),
         "nc": 1,  # Adjust according to dataset class count
-        "names": ["brick"],  # Adjust class name accordingly
+        "names": [mode[:-1]],  # Adjust class name accordingly
     }
     yaml_path = os.path.join(output_dir, "dataset/dataset.yaml")
     with open(yaml_path, "w") as f:
@@ -266,7 +266,7 @@ def main():
     # 3️⃣ Preprocessing & Augmentations
     dataset_dir = create_dataset_structure()
     split_dataset(os.path.join(DATA_DIR, args.mode, "images"),
-                  os.path.join(DATA_DIR, args.mode, "labels"), dataset_dir)
+                  os.path.join(DATA_DIR, args.mode, "labels"), dataset_dir, args.mode)
     augment_data(os.path.join(dataset_dir, "dataset/images/train"),
                  os.path.join(dataset_dir, "dataset/labels/train"),
                  dataset_dir)
