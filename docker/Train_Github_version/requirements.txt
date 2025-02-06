@@ -17,7 +17,7 @@ requests
 pyyaml
 
 # JSON: Manipulación y exportación de logs en formato estructurado
-json
+# json
 
 # Scikit-learn: División de datasets en subconjuntos de entrenamiento, validación y prueba
 scikit-learn
