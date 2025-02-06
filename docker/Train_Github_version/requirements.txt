@@ -1,0 +1,23 @@
+# PyTorch: Biblioteca para entrenamiento de modelos de aprendizaje profundo
+torch
+
+# Ultralytics: Implementación de YOLOv8 para tareas de visión por computadora
+ultralytics
+
+# Albumentations: Librería avanzada de aumentación de imágenes
+albumentations
+
+# OpenCV: Procesamiento de imágenes y manipulación de datos visuales
+opencv-python
+
+# Requests: Descarga de datasets y modelos desde servidores remotos
+requests
+
+# PyYAML: Manejo de archivos YAML, utilizado para la configuración de datasets
+pyyaml
+
+# JSON: Manipulación y exportación de logs en formato estructurado
+json
+
+# Scikit-learn: División de datasets en subconjuntos de entrenamiento, validación y prueba
+scikit-learn

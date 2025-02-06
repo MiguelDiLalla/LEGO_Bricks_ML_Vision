@@ -34,7 +34,7 @@ def main():
     
     # Construct command to run the pipeline script
     command = [
-        "python3", "pipeline_main.py",
+        "python3", "Train_models_docker.py",
         "--mode", args.mode,
         "--model", args.model,
         "--epochs", str(args.epochs),
