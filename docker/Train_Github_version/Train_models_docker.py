@@ -92,6 +92,25 @@ def download_dataset(mode):
     logging.info(f"Dataset ready: Images -> {images_path}, Labels -> {labels_path}")
     return images_path, labels_path
 
+def create_dataset_structure():
+    """
+    Creates the necessary folder structure for dataset preprocessing.
+    
+    Returns:
+        str: Path to the dataset preprocessing directory.
+    """
+    os.makedirs(PREPROCESS_DIR, exist_ok=True)
+    subfolders = [
+        "dataset/images/train", "dataset/images/val", "dataset/images/test",
+        "dataset/labels/train", "dataset/labels/val", "dataset/labels/test"
+    ]
+    
+    for subfolder in subfolders:
+        os.makedirs(os.path.join(PREPROCESS_DIR, subfolder), exist_ok=True)
+    
+    logging.info(f"Dataset structure created at: {PREPROCESS_DIR}")
+    return PREPROCESS_DIR
+
 def validate_dataset(mode):
     """
     Validates dataset integrity by checking image-label parity and file integrity.
