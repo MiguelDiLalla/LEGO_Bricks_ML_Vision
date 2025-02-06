@@ -7,6 +7,8 @@ import torch
 import zipfile
 import requests
 import yaml
+import albumentations as A
+import cv2
 from datetime import datetime
 from sklearn.model_selection import train_test_split
 from ultralytics import YOLO
@@ -24,6 +26,13 @@ logging.basicConfig(
 GITHUB_REPO = "https://github.com/MiguelDiLalla/LEGO_Bricks_ML_Vision/raw/main/presentation/Datasets_Compress"
 DATA_DIR = "/app/data/datasets"
 PREPROCESS_DIR = "/app/data/preprocessed"
+MODEL_REPO = "https://github.com/MiguelDiLalla/LEGO_Bricks_ML_Vision/raw/main/models"
+
+AVAILABLE_MODELS = {
+    "base": "yolov8n.pt",
+    "bricks": "Brick_Model_best20250123_192838t.pt",
+    "studs": "Stud_Model_best20250124_170824.pt"
+}
 
 def detect_hardware():
     """
@@ -277,6 +286,68 @@ def augment_data(images_path, labels_path, output_dir, num_augmentations=2):
             save_labels(aug_label_path, aug_bboxes, aug_labels)
     
     logging.info("Data augmentation completed.")
+
+def select_model(model_type):
+    """
+    Selects and downloads the appropriate model checkpoint.
+    
+    Args:
+        model_type (str): One of 'base', 'bricks', or 'studs'.
+    
+    Returns:
+        str: Path to the selected model file.
+    """
+    if model_type not in AVAILABLE_MODELS:
+        logging.error(f"Invalid model type: {model_type}. Must be one of {list(AVAILABLE_MODELS.keys())}.")
+        sys.exit(1)
+    
+    model_filename = AVAILABLE_MODELS[model_type]
+    model_path = os.path.join("/app/data/models", model_filename)
+    
+    if not os.path.exists(model_path):
+        os.makedirs("/app/data/models", exist_ok=True)
+        model_url = f"{MODEL_REPO}/{model_filename}"
+        logging.info(f"Downloading model: {model_filename} from {model_url}")
+        try:
+            response = requests.get(model_url, stream=True)
+            response.raise_for_status()
+            with open(model_path, 'wb') as file:
+                for chunk in response.iter_content(chunk_size=8192):
+                    file.write(chunk)
+            logging.info(f"Model downloaded and saved to {model_path}")
+        except requests.RequestException as e:
+            logging.error(f"Model download failed: {e}")
+            sys.exit(1)
+    
+    return model_path
+
+def train_model(dataset_yaml, output_dir, device, model_type, epochs=20, batch_size=16):
+    """
+    Trains the YOLO model using the selected dataset and parameters.
+    
+    Args:
+        dataset_yaml (str): Path to the dataset.yaml file.
+        output_dir (str): Path to save training outputs.
+        device (str): Computation device ('cpu' or '0,1' for GPUs).
+        model_type (str): Selected model type ('base', 'bricks', 'studs').
+        epochs (int): Number of training epochs.
+        batch_size (int): Training batch size.
+    """
+    model_path = select_model(model_type)
+    model = YOLO(model_path)
+    
+    logging.info(f"Starting training with model: {model_path}")
+    model.train(
+        data=dataset_yaml,
+        epochs=epochs,
+        batch=batch_size,
+        device=device,
+        project=output_dir,
+        name="train"
+    )
+    
+    logging.info(f"Training completed. Results saved in {output_dir}")
+
 
 def parse_args():
     """Parses command-line arguments for the pipeline."""
