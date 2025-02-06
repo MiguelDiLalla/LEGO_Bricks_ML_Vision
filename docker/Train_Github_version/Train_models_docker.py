@@ -179,7 +179,7 @@ def copy_user_dataset(images_path, labels_path, mode):
     
     logging.info(f"Dataset copied to: {target_path}")
 
-def split_dataset(images_path, labels_path, output_di, mode):
+def split_dataset(images_path, labels_path, output_dir, mode):
     """
     Splits the dataset into train, validation, and test sets, moves them to the corresponding folders,
     and generates the dataset.yaml file for YOLO training.
@@ -253,12 +253,32 @@ def augment_data(images_path, labels_path, output_dir, num_augmentations=2):
     """
     aug_images_dir = os.path.join(output_dir, "dataset/images/train")
     aug_labels_dir = os.path.join(output_dir, "dataset/labels/train")
+    os.makedirs(aug_images_dir, exist_ok=True)
+    os.makedirs(aug_labels_dir, exist_ok=True)
+    
+    def load_labels(label_path):
+        """Loads bounding boxes and class labels from a YOLO-format label file."""
+        bboxes = []
+        class_labels = []
+        with open(label_path, "r") as f:
+            for line in f:
+                parts = line.strip().split()
+                if len(parts) >= 5:
+                    class_labels.append(int(parts[0]))
+                    bboxes.append([float(x) for x in parts[1:]])
+        return bboxes, class_labels
+    
+    def save_labels(label_path, bboxes, class_labels):
+        """Saves bounding boxes and class labels in YOLO format."""
+        with open(label_path, "w") as f:
+            for label, bbox in zip(class_labels, bboxes):
+                f.write(f"{label} " + " ".join(map(str, bbox)) + "\n")
     
     transform = A.Compose([
         A.HorizontalFlip(p=0.5),
         A.RandomBrightnessContrast(p=0.2),
         A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.05, rotate_limit=15, p=0.5),
-        A.Resize(height=640, width=640),
+        A.Resize(height=640, width=640)
     ], bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
     
     images = sorted([f for f in os.listdir(images_path) if f.endswith(".jpg")])
@@ -267,6 +287,7 @@ def augment_data(images_path, labels_path, output_dir, num_augmentations=2):
         label_path = os.path.join(labels_path, img_file.replace(".jpg", ".txt"))
         
         if not os.path.exists(label_path):
+            logging.warning(f"Skipping {img_file}: No matching label file.")
             continue
         
         image = cv2.imread(img_path)
@@ -277,16 +298,20 @@ def augment_data(images_path, labels_path, output_dir, num_augmentations=2):
         bboxes, class_labels = load_labels(label_path)
         
         for i in range(num_augmentations):
-            augmented = transform(image=image, bboxes=bboxes, class_labels=class_labels)
-            aug_image = augmented["image"]
-            aug_bboxes = augmented["bboxes"]
-            aug_labels = augmented["class_labels"]
-            
-            aug_image_path = os.path.join(aug_images_dir, f"{img_file.split('.')[0]}_aug{i}.jpg")
-            cv2.imwrite(aug_image_path, aug_image)
-            
-            aug_label_path = os.path.join(aug_labels_dir, f"{img_file.split('.')[0]}_aug{i}.txt")
-            save_labels(aug_label_path, aug_bboxes, aug_labels)
+            try:
+                augmented = transform(image=image, bboxes=bboxes, class_labels=class_labels)
+                aug_image = augmented["image"]
+                aug_bboxes = augmented["bboxes"]
+                aug_labels = augmented["class_labels"]
+                
+                aug_image_path = os.path.join(aug_images_dir, f"{img_file.split('.')[0]}_aug{i}.jpg")
+                cv2.imwrite(aug_image_path, aug_image)
+                
+                aug_label_path = os.path.join(aug_labels_dir, f"{img_file.split('.')[0]}_aug{i}.txt")
+                save_labels(aug_label_path, aug_bboxes, aug_labels)
+                logging.info(f"Augmented image saved: {aug_image_path}")
+            except Exception as e:
+                logging.error(f"Augmentation failed for {img_file}: {e}")
     
     logging.info("Data augmentation completed.")
 
