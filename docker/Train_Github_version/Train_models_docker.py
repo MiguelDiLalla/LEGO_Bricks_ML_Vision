@@ -6,7 +6,9 @@ import argparse
 import torch
 import zipfile
 import requests
+import yaml
 from datetime import datetime
+from sklearn.model_selection import train_test_split
 from ultralytics import YOLO
 
 # === Setup Logging ===
@@ -21,6 +23,7 @@ logging.basicConfig(
 
 GITHUB_REPO = "https://github.com/MiguelDiLalla/LEGO_Bricks_ML_Vision/raw/main/presentation/Datasets_Compress"
 DATA_DIR = "/app/data/datasets"
+PREPROCESS_DIR = "/app/data/preprocessed"
 
 def detect_hardware():
     """
