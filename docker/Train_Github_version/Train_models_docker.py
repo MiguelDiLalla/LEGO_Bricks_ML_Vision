@@ -415,6 +415,7 @@ def zip_training_results(training_dir):
     logging.info(f"Training results archived at: {zip_path}")
     return zip_path
 
+
 def parse_args():
     """Parses command-line arguments for the pipeline."""
     parser = argparse.ArgumentParser(description="LEGO ML Training Pipeline")
