@@ -14,8 +14,12 @@ from datetime import datetime
 from sklearn.model_selection import train_test_split
 from ultralytics import YOLO
 
-# === Setup Logging ===
-LOG_FILE = "/app/data/pipeline_log.txt"
+# Ensure the logging directory exists
+LOG_DIR = "/app/data"
+os.makedirs(LOG_DIR, exist_ok=True)
+
+# Setup Logging
+LOG_FILE = os.path.join(LOG_DIR, "pipeline_log.txt")
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -466,6 +470,19 @@ def main():
         sys.exit(1)
     logging.info(f"Using device: {device}")
     
+    # 2️⃣ Pre-Check: Ensure Dataset and Model Exist
+    if args.mode not in ["bricks", "studs"]:
+        logging.error(f"Invalid mode '{args.mode}'. Exiting.")
+        sys.exit(1)
+
+    dataset_path = os.path.join(DATA_DIR, args.mode)
+    if not os.path.exists(dataset_path):
+        logging.warning(f"Dataset for mode '{args.mode}' is missing. Attempting to download...")
+
+    if args.model not in AVAILABLE_MODELS:
+        logging.error(f"Model '{args.model}' is not available. Exiting.")
+        sys.exit(1)
+
     # 2️⃣ Dataset Handling
     if args.images and args.labels:
         logging.info("Using user-provided dataset.")
