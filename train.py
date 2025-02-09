@@ -6,27 +6,39 @@ from datetime import datetime
 
 # Initialize logging
 
-def setup_logging():
+import os
+import logging
+import shutil
+import yaml
+import json
+import zipfile
+import subprocess
+from ultralytics import YOLO
+from datetime import datetime
+
+def setup_logging(log_name="train_session"):
     """
-    Configures logging for the training script.
-    Logs are saved in 'logs/train.log' and displayed in the console.
+    Configures logging for the training script with immediate flushing.
     """
     log_dir = "logs"
     os.makedirs(log_dir, exist_ok=True)
-    log_file = os.path.join(log_dir, "train.log")
+    log_file = os.path.join(log_dir, f"{log_name}.log")
     
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(levelname)s - %(message)s",
         handlers=[
-            logging.StreamHandler(),
+            logging.StreamHandler(),  # Immediate console logging
             logging.FileHandler(log_file, mode="a")
         ]
     )
-    logging.info("Logging initialized.")
 
-# Detect hardware availability
+    # Ensure immediate flushing
+    for handler in logging.getLogger().handlers:
+        handler.setLevel(logging.INFO)
+        handler.flush = lambda: None  # Enforce immediate write
 
+    logging.info(f"Logging initialized: {log_file}")
 
 # Auto-detect repository root
 
@@ -41,6 +53,7 @@ def get_repo_root():
         current_dir = os.path.dirname(current_dir)
     return current_dir if os.path.exists(os.path.join(current_dir, ".git")) else os.getcwd()
 
+# Detect hardware availability
 
 def detect_hardware():
     """
@@ -236,35 +249,80 @@ def select_model(mode, use_pretrained=False):
         logging.error(f"❌ Model not found at {model_path}")
         raise FileNotFoundError(f"Required model file is missing: {model_path}")
 
+# Training the model
+
 def train_model(dataset_path, model_path, device, epochs, batch_size):
     """
-    Trains the YOLOv8 model on the structured dataset.
-
-    Args:
-        dataset_path (str): Path to dataset.yaml file.
-        model_path (str): Path to the selected YOLO model.
-        device (str): Training device (GPU/CPU).
-        epochs (int): Number of epochs.
-        batch_size (int): Batch size.
+    Trains the YOLOv8 model with real-time logging and CLI streaming.
     """
     logging.info(f"🚀 Starting training with model: {model_path}")
     
-    # Load YOLO model
     model = YOLO(model_path)
+    
+    # Create command for training with real-time output capture
+    command = [
+        "yolo",
+        "train",
+        f"--data={dataset_path}",
+        f"--epochs={epochs}",
+        f"--batch={batch_size}",
+        f"--device={device}",
+        "--project=cache/results/TrainingSessions",
+        f"--name=training_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+        "--exist-ok"
+    ]
 
-    # Train the model
-    results = model.train(
-        data=dataset_path,
-        epochs=epochs,
-        batch=batch_size,
-        device=device,
-        project="cache/results/TrainingSessions",
-        name=f"training_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-        exist_ok=True
-    )
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    
+    # Stream logs in real-time
+    for line in iter(process.stdout.readline, ""):
+        logging.info(line.strip())  # Log immediately
+        print(line.strip())  # Stream to CLI
+
+    process.stdout.close()
+    process.wait()
 
     logging.info("✅ Training completed.")
-    return results
+
+
+#zip results
+
+def zip_training_results(training_dir):
+    """
+    Compresses training results into a zip file for easy retrieval.
+    """
+    zip_filename = f"{training_dir}.zip"
+    with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for root, _, files in os.walk(training_dir):
+            for file in files:
+                file_path = os.path.join(root, file)
+                zipf.write(file_path, os.path.relpath(file_path, training_dir))
+    logging.info(f"✅ Training results compressed into: {zip_filename}")
+    return zip_filename
+
+# Export logs
+
+def export_logs(log_file, output_format="json"):
+    """
+    Exports logs in JSON or TXT format for easy debugging.
+    """
+    log_path = os.path.join("logs", log_file)
+    if not os.path.exists(log_path):
+        logging.error("❌ Log file not found.")
+        return None
+    
+    export_path = log_path.replace(".log", f".{output_format}")
+    
+    if output_format == "json":
+        with open(log_path, "r") as f:
+            log_entries = [line.strip() for line in f.readlines()]
+        with open(export_path, "w") as f:
+            json.dump(log_entries, f, indent=4)
+    else:
+        shutil.copy(log_path, export_path)
+    
+    logging.info(f"✅ Logs exported to {export_path}")
+    return export_path
 
 # Parse command-line arguments
 def parse_args():
@@ -296,27 +354,18 @@ def main():
     device = detect_hardware()
     logging.info(f"Using device: {device}")
     
-    # Initialize execution structure
     setup_execution_structure()
-
-    # Dataset preparation
     dataset_path = unzip_dataset(args.mode, args.force_extract)
     logging.info(f"Dataset ready at: {dataset_path}")
-
-    # Validate dataset
+    
     validate_dataset(args.mode)
-
-    # Organize dataset for training
     dataset_yolo_path = create_dataset_structure(args.mode)
     logging.info(f"Dataset organized at: {dataset_yolo_path}")
     
-    # Select model
     model_path = select_model(args.mode, args.use_pretrained)
     logging.info(f"Using model: {model_path}")
     
-    # Train model
-    train_results = train_model(dataset_yolo_path, model_path, device, args.epochs, args.batch_size)
-    logging.info(f"Training results saved at: {train_results}")
+    train_model(dataset_yolo_path, model_path, device, args.epochs, args.batch_size)
     
     logging.info("✅ Training pipeline completed successfully.")
 
