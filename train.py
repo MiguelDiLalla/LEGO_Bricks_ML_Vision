@@ -139,6 +139,73 @@ def validate_dataset(mode):
 
     logging.info(f"✅ Dataset validation successful for mode: {mode}")
 
+# create dataset folder tree structure
+def create_dataset_structure(mode):
+    """
+    Organizes extracted dataset into YOLO format and creates dataset.yaml.
+
+    Args:
+        mode (str): 'bricks' or 'studs', defining dataset location.
+    """
+    repo_root = get_repo_root()
+    dataset_path = os.path.join(repo_root, "cache/datasets", mode)
+    output_dir = os.path.join(repo_root, "cache/datasets", f"{mode}_yolo")
+
+    # YOLO structure directories
+    yolo_dirs = [
+        "dataset/images/train",
+        "dataset/images/val",
+        "dataset/images/test",
+        "dataset/labels/train",
+        "dataset/labels/val",
+        "dataset/labels/test"
+    ]
+    
+    # Create YOLO structure
+    for yolo_dir in yolo_dirs:
+        os.makedirs(os.path.join(output_dir, yolo_dir), exist_ok=True)
+
+    # Get all images and labels
+    images_path = os.path.join(dataset_path, "images")
+    labels_path = os.path.join(dataset_path, "labels")
+
+    image_files = sorted([f for f in os.listdir(images_path) if f.endswith(".jpg")])
+    label_files = sorted([f for f in os.listdir(labels_path) if f.endswith(".txt")])
+
+    # Split into train (70%), val (20%), test (10%)
+    num_train = int(len(image_files) * 0.7)
+    num_val = int(len(image_files) * 0.2)
+    
+    train_files = image_files[:num_train]
+    val_files = image_files[num_train:num_train + num_val]
+    test_files = image_files[num_train + num_val:]
+
+    # Helper function to move files
+    def move_files(files, img_dst, lbl_dst):
+        for f in files:
+            shutil.copy(os.path.join(images_path, f), os.path.join(output_dir, img_dst, f))
+            shutil.copy(os.path.join(labels_path, f.replace(".jpg", ".txt")), os.path.join(output_dir, lbl_dst, f.replace(".jpg", ".txt")))
+
+    # Move files
+    move_files(train_files, "dataset/images/train", "dataset/labels/train")
+    move_files(val_files, "dataset/images/val", "dataset/labels/val")
+    move_files(test_files, "dataset/images/test", "dataset/labels/test")
+
+    # Create dataset.yaml
+    dataset_yaml = {
+        "path": output_dir,
+        "train": "dataset/images/train",
+        "val": "dataset/images/val",
+        "test": "dataset/images/test",
+        "nc": 1,
+        "names": ["lego_brick"] if mode == "bricks" else ["lego_stud"]
+    }
+    
+    with open(os.path.join(output_dir, "dataset.yaml"), "w") as f:
+        yaml.dump(dataset_yaml, f, default_flow_style=False)
+
+    logging.info(f"✅ Dataset structure created at {output_dir}")
+    return output_dir
 
 # Parse command-line arguments
 
@@ -181,6 +248,10 @@ def main():
 
     # Validate dataset
     validate_dataset(args.mode)
+
+    # Organize dataset for training
+    dataset_yolo_path = create_dataset_structure(args.mode)
+    logging.info(f"Dataset organized at: {dataset_yolo_path}")
     
     # Placeholder for model training
     logging.info("Starting model training...")
