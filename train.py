@@ -107,6 +107,39 @@ def unzip_dataset(mode, force_extract=False):
 
     return extract_path
 
+# Dataset validation function
+
+def validate_dataset(mode):
+    """
+    Validates dataset integrity by checking image-label parity and file integrity.
+
+    Args:
+        mode (str): 'bricks' or 'studs', defining dataset location.
+    """
+    repo_root = get_repo_root()
+    dataset_path = os.path.join(repo_root, "cache/datasets", mode)
+    images_path = os.path.join(dataset_path, "images")
+    labels_path = os.path.join(dataset_path, "labels")
+
+    if not os.path.exists(images_path) or not os.path.exists(labels_path):
+        logging.error(f"Missing required dataset folders in {dataset_path}.")
+        raise FileNotFoundError(f"Missing dataset directories: {images_path} or {labels_path}")
+
+    image_files = sorted([f for f in os.listdir(images_path) if f.endswith(".jpg")])
+    label_files = sorted([f for f in os.listdir(labels_path) if f.endswith(".txt")])
+
+    if len(image_files) != len(label_files):
+        logging.error("Mismatch between number of images and labels.")
+        raise ValueError("Image-label count mismatch. Ensure every image has a corresponding label.")
+
+    for img, lbl in zip(image_files, label_files):
+        if os.path.splitext(img)[0] != os.path.splitext(lbl)[0]:
+            logging.error(f"Mismatched pair: {img} and {lbl}")
+            raise ValueError(f"Mismatched dataset files: {img} and {lbl}")
+
+    logging.info(f"✅ Dataset validation successful for mode: {mode}")
+
+
 # Parse command-line arguments
 
 def parse_args():
@@ -143,9 +176,12 @@ def main():
     setup_execution_structure()
 
     # Dataset preparation
-    dataset_path = unzip_dataset(args.mode, args.force_download)
+    dataset_path = unzip_dataset(args.mode, args.force_extract)
     logging.info(f"Dataset ready at: {dataset_path}")
-        
+
+    # Validate dataset
+    validate_dataset(args.mode)
+    
     # Placeholder for model training
     logging.info("Starting model training...")
     # train_model(dataset_yaml, output_dir, device, args.model, epochs=args.epochs, batch_size=args.batch_size)
