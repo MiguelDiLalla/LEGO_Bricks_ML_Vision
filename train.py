@@ -27,6 +27,21 @@ def setup_logging():
 
 # Detect hardware availability
 
+
+# Auto-detect repository root
+
+def get_repo_root():
+    """
+    Auto-detects the repository root directory.
+    Returns:
+        str: Root directory of the repository.
+    """
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    while current_dir != "/" and not os.path.exists(os.path.join(current_dir, ".git")):
+        current_dir = os.path.dirname(current_dir)
+    return current_dir if os.path.exists(os.path.join(current_dir, ".git")) else os.getcwd()
+
+
 def detect_hardware():
     """
     Detects available hardware for training.
@@ -46,6 +61,52 @@ def detect_hardware():
     logging.warning("No GPU or MPS device detected. Falling back to CPU.")
     return "cpu"
 
+def setup_execution_structure():
+    """
+    Ensures all necessary cache directories are created before execution.
+    """
+    repo_root = get_repo_root()
+    required_dirs = [
+        "cache/datasets",
+        "cache/models",
+        "cache/logs",
+        "cache/results/TrainingSessions",
+    ]
+    for directory in required_dirs:
+        full_path = os.path.join(repo_root, directory)
+        os.makedirs(full_path, exist_ok=True)
+    logging.info("✅ Execution structure initialized.")
+
+# Dataset download function
+
+def unzip_dataset(mode, force_extract=False):
+    """
+    Extracts the dataset from the repository's compressed files.
+
+    Args:
+        mode (str): 'bricks' or 'studs'.
+        force_extract (bool): If True, forces re-extraction even if dataset exists.
+    """
+    repo_root = get_repo_root()
+    dataset_compressed_dir = os.path.join(repo_root, "presentation/Datasets_Compress")
+    dataset_dir = os.path.join(repo_root, "cache/datasets")
+    
+    dataset_filename = "LegoBricks_Dataset.zip" if mode == "bricks" else "BrickStuds_Dataset.zip"
+    dataset_path = os.path.join(dataset_compressed_dir, dataset_filename)
+    extract_path = os.path.join(dataset_dir, mode)
+
+    os.makedirs(dataset_dir, exist_ok=True)
+
+    if not force_extract and os.path.exists(extract_path):
+        logging.info(f"Dataset already extracted at {extract_path}. Skipping extraction.")
+        return extract_path
+
+    logging.info(f"Extracting {dataset_filename}...")
+    shutil.unpack_archive(dataset_path, extract_path)
+    logging.info(f"Dataset extracted to: {extract_path}")
+
+    return extract_path
+
 # Parse command-line arguments
 
 def parse_args():
@@ -60,7 +121,10 @@ def parse_args():
     parser.add_argument("--batch-size", type=int, default=16, help="Batch size for training")
     parser.add_argument("--zip-results", action="store_true", help="Compress training results after completion")
     parser.add_argument("--cleanup", action="store_true", help="Remove cached datasets after training")
+    # parser.add_argument("--dataset-dir", type=str, default="cache/datasets", help="Directory to store downloaded datasets")
+    parser.add_argument("--force-download", action="store_true", help="Force re-download of dataset even if it exists")
     return parser.parse_args()
+# Main execution
 
 # Main execution
 
@@ -75,23 +139,26 @@ def main():
     device = detect_hardware()
     logging.info(f"Using device: {device}")
     
-    # Placeholder for dataset download and preparation
-    logging.info("Downloading and preparing dataset...")
-    # download_dataset(args.mode)
-    
+    # Initialize execution structure
+    setup_execution_structure()
+
+    # Dataset preparation
+    dataset_path = unzip_dataset(args.mode, args.force_download)
+    logging.info(f"Dataset ready at: {dataset_path}")
+        
     # Placeholder for model training
     logging.info("Starting model training...")
     # train_model(dataset_yaml, output_dir, device, args.model, epochs=args.epochs, batch_size=args.batch_size)
     
-    # Placeholder for post-training steps
+    # Post-training steps
     if args.zip_results:
         logging.info("Zipping training results...")
         # zip_training_results(training_dir)
     
     if args.cleanup:
-        logging.info("Cleaning up cached datasets...")
-        # cleanup_cache()
-    
+        logging.info("Cleaning up temporary cache...")
+        os.system("python3 cli.py cleanup")
+        
     logging.info("✅ Training pipeline completed successfully.")
 
 if __name__ == "__main__":

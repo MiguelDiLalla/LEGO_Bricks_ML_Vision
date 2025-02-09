@@ -22,11 +22,13 @@ def train_model(args):
     """Executes the training pipeline."""
     logging.info("Starting training...")
     command = [
-        "python3", "train.py",
+        "python3", os.path.join(get_repo_root(), "train.py"),
         "--mode", args.mode,
         "--epochs", str(args.epochs),
         "--batch-size", str(args.batch_size)
     ]
+    if args.force_extract:
+        command.append("--force-extract")
     subprocess.run(command)
 
 def predict_brick(args):
@@ -41,13 +43,13 @@ def predict_brick(args):
     subprocess.run(command)
 
 def cleanup_cache():
-    """Removes cached datasets and models."""
-    cache_dirs = ["cache", "models", "data"]
+    """Removes cached datasets and models, but keeps results."""
+    cache_dirs = ["cache/datasets", "cache/models"]
     for folder in cache_dirs:
         if os.path.exists(folder):
             shutil.rmtree(folder)
             logging.info(f"Deleted {folder}")
-    logging.info("Cache cleanup complete.")
+    logging.info("Cache cleanup complete. Results are preserved.")
 
 def main():
     setup_logging()
@@ -59,6 +61,7 @@ def main():
     train_parser.add_argument("--mode", required=True, choices=["bricks", "studs"], help="Training mode")
     train_parser.add_argument("--epochs", type=int, default=20, help="Number of epochs")
     train_parser.add_argument("--batch-size", type=int, default=16, help="Batch size")
+    train_parser.add_argument("--force-extract", action="store_true", help="Force re-extraction of dataset")
     train_parser.set_defaults(func=train_model)
 
     # Predict Command

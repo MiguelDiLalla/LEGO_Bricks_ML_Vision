@@ -1,53 +1,46 @@
-# Ignorar todo en la carpeta data excepto anotaciones si es necesario.
-data/*
-!data/annotations/*
+# =============================
+#  🚀 Optimized .gitignore for LEGO ML Project
+# =============================
 
-# Ignorar todo en la carpeta "working" de la carpeta "notebooks" excepto los archivos de datos si es necesario.
-notebooks/working/*
-notebooks/optuna_yolo_training/*
-notebooks/regular_yolo_training/*
-notebooks/yolov8n.pt
+# ✅ Ignore everything inside `data/`
+data/
 
-# Ignorar entornos virtuales
-.env/
-*.env
+# ✅ Ignore extracted datasets inside cache/
+cache/datasets/
+cache/models/
 
-# Ignorar archivos temporales de Python
-*.pyc
+# ✅ Keep dataset zips tracked in `presentation/`
+!presentation/Datasets_Compress/
+
+# ✅ Ignore logs, execution artifacts, and generated files
+logs/
+*.log
 __pycache__/
+*.pyc
 *.pyo
 *.pyd
 
-# Ignorar archivos de logs
-*.log
-logs/
-
-# Ignorar archivos de sistema
+# ✅ Ignore system-specific files
 .DS_Store
 Thumbs.db
+*.swp
+*.tmp
+*.bak
 
-# Ignorar archivos generados por el sistema de construcción
+# ✅ Ignore build system artifacts
 *.egg-info/
 *.egg
 build/
 dist/
 
-# Ignorar archivos de notebook checkpoints
-.ipynb_checkpoints/
-
-# Ignorar outputs y carpetas de resultados temporales
+# ✅ Ignore results and test files
 results/
 output/
 tests/
 
-# Ignorar configuraciones locales de IDE
+# ✅ Ignore IDE and editor-specific files
 .vscode/
 .idea/
 
-# Ignorar carpetas ocultas y otros archivos temporales
-*.bak
-*.swp
-*.tmp
-
-# Ignorar el PDF generado si no es parte del código fuente
-# *.pdf
+# ✅ Ensure necessary execution structure remains intact
+!results/TrainingSessions/.gitkeep
