@@ -27,8 +27,9 @@ def train_model(args):
         "--epochs", str(args.epochs),
         "--batch-size", str(args.batch_size)
     ]
-    if args.force_extract:
-        command.append("--force-extract")
+
+    if args.use_pretrained:
+        command.append("--use-pretrained")
     subprocess.run(command)
 
 def predict_brick(args):
@@ -58,6 +59,7 @@ def main():
 
     # Train Command
     train_parser = subparsers.add_parser("train", help="Train a model")
+    train_parser.add_argument("--use-pretrained", action="store_true", help="Use LEGO-trained model instead of YOLOv8n")
     train_parser.add_argument("--mode", required=True, choices=["bricks", "studs"], help="Training mode")
     train_parser.add_argument("--epochs", type=int, default=20, help="Number of epochs")
     train_parser.add_argument("--batch-size", type=int, default=16, help="Batch size")

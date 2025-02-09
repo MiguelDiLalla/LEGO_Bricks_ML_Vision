@@ -207,8 +207,37 @@ def create_dataset_structure(mode):
     logging.info(f"✅ Dataset structure created at {output_dir}")
     return output_dir
 
-# Parse command-line arguments
+# slecting the model to train
+def select_model(mode, use_pretrained=False):
+    """
+    Selects a pre-trained model from the repository or defaults to YOLOv8n.
 
+    Args:
+        mode (str): 'bricks' or 'studs'.
+        use_pretrained (bool): If True, selects a LEGO-trained model, else defaults to YOLOv8n.
+
+    Returns:
+        str: Path to the selected model checkpoint.
+    """
+    repo_root = get_repo_root()
+    
+    if not use_pretrained:
+        logging.info("✅ Using default YOLOv8n model.")
+        return "yolov8n.pt"
+    
+    model_dir = os.path.join(repo_root, "presentation/Models_DEMO")
+    model_filename = "Brick_Model_best20250123_192838t.pt" if mode == "bricks" else "Stud_Model_best20250124_170824.pt"
+    model_path = os.path.join(model_dir, model_filename)
+    
+    if os.path.exists(model_path):
+        logging.info(f"✅ Model selected: {model_path}")
+        return model_path
+    else:
+        logging.error(f"❌ Model not found at {model_path}")
+        raise FileNotFoundError(f"Required model file is missing: {model_path}")
+
+
+# Parse command-line arguments
 def parse_args():
     """
     Parses command-line arguments for the training pipeline.
@@ -221,10 +250,9 @@ def parse_args():
     parser.add_argument("--batch-size", type=int, default=16, help="Batch size for training")
     parser.add_argument("--zip-results", action="store_true", help="Compress training results after completion")
     parser.add_argument("--cleanup", action="store_true", help="Remove cached datasets after training")
-    # parser.add_argument("--dataset-dir", type=str, default="cache/datasets", help="Directory to store downloaded datasets")
-    parser.add_argument("--force-download", action="store_true", help="Force re-download of dataset even if it exists")
+    parser.add_argument("--force-extract", action="store_true", help="Force re-extraction of dataset")
+    parser.add_argument("--use-pretrained", action="store_true", help="Use LEGO-trained model instead of YOLOv8n")
     return parser.parse_args()
-# Main execution
 
 # Main execution
 
@@ -253,19 +281,14 @@ def main():
     dataset_yolo_path = create_dataset_structure(args.mode)
     logging.info(f"Dataset organized at: {dataset_yolo_path}")
     
+    # Select model
+    model_path = select_model(args.mode, args.use_pretrained)
+    logging.info(f"Using model: {model_path}")
+    
     # Placeholder for model training
     logging.info("Starting model training...")
-    # train_model(dataset_yaml, output_dir, device, args.model, epochs=args.epochs, batch_size=args.batch_size)
+    # train_model(dataset_yaml, output_dir, device, model_path, epochs=args.epochs, batch_size=args.batch_size)
     
-    # Post-training steps
-    if args.zip_results:
-        logging.info("Zipping training results...")
-        # zip_training_results(training_dir)
-    
-    if args.cleanup:
-        logging.info("Cleaning up temporary cache...")
-        os.system("python3 cli.py cleanup")
-        
     logging.info("✅ Training pipeline completed successfully.")
 
 if __name__ == "__main__":
