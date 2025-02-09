@@ -236,6 +236,35 @@ def select_model(mode, use_pretrained=False):
         logging.error(f"❌ Model not found at {model_path}")
         raise FileNotFoundError(f"Required model file is missing: {model_path}")
 
+def train_model(dataset_path, model_path, device, epochs, batch_size):
+    """
+    Trains the YOLOv8 model on the structured dataset.
+
+    Args:
+        dataset_path (str): Path to dataset.yaml file.
+        model_path (str): Path to the selected YOLO model.
+        device (str): Training device (GPU/CPU).
+        epochs (int): Number of epochs.
+        batch_size (int): Batch size.
+    """
+    logging.info(f"🚀 Starting training with model: {model_path}")
+    
+    # Load YOLO model
+    model = YOLO(model_path)
+
+    # Train the model
+    results = model.train(
+        data=dataset_path,
+        epochs=epochs,
+        batch=batch_size,
+        device=device,
+        project="cache/results/TrainingSessions",
+        name=f"training_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+        exist_ok=True
+    )
+
+    logging.info("✅ Training completed.")
+    return results
 
 # Parse command-line arguments
 def parse_args():
@@ -285,9 +314,9 @@ def main():
     model_path = select_model(args.mode, args.use_pretrained)
     logging.info(f"Using model: {model_path}")
     
-    # Placeholder for model training
-    logging.info("Starting model training...")
-    # train_model(dataset_yaml, output_dir, device, model_path, epochs=args.epochs, batch_size=args.batch_size)
+    # Train model
+    train_results = train_model(dataset_yolo_path, model_path, device, args.epochs, args.batch_size)
+    logging.info(f"Training results saved at: {train_results}")
     
     logging.info("✅ Training pipeline completed successfully.")
 
