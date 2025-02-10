@@ -216,17 +216,7 @@ def visualize_yolo_annotations(image_path_or_folder, labels_folder, mode, extra_
 
 
 # Mapping Table for Stud Count to Brick Dimensions
-STUD_TO_DIMENSION_MAP = {
-    1: "1x1",
-    2: "2x1",
-    3: "3x1",
-    4: ["2x2", "4x1"],
-    6: ["3x2", "6x1"],
-    8: ["4x2", "8x1"],
-    10: "10x1",
-    12: "6x2",
-    16: "8x2",
-}
+
 
 def classify_brick_from_studs(studs, image, working_folder, SAVE_ANNOTATED, PLT_ANNOTATED):
     """Classifies the brick dimension based on detected stud positions."""
@@ -424,6 +414,18 @@ def save_metadata(metadata, working_folder, output_format="json"):
         pd.DataFrame([metadata]).to_csv(csv_path, index=False)
     else:
         raise ValueError(f"Unsupported output format: {output_format}")
+
+STUD_TO_DIMENSION_MAP = {
+    1: "1x1",
+    2: "2x1",
+    3: "3x1",
+    4: ["2x2", "4x1"],
+    6: ["3x2", "6x1"],
+    8: ["4x2", "8x1"],
+    10: "10x1",
+    12: "6x2",
+    16: "8x2",
+}
 
 def predict_brick_dimensions(image_path, model_bricks, model_studs, mode, working_folder=None, SAVE_ANNOTATED=False, PLT_ANNOTATED=False, SAVE_JSON=False):
     """
