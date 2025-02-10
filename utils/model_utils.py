@@ -10,6 +10,7 @@ import argparse
 import cv2
 import numpy as np
 import torch
+import shutil
 import matplotlib.pyplot as plt
 from ultralytics import YOLO
 from PIL import Image, ExifTags
@@ -47,7 +48,28 @@ def load_model(mode):
     logging.info(f"🔹 Loading model: {model_path}")
     return YOLO(model_path)
 
+def zip_results(results_folder, output_path=None):
+    """
+    Compresses inference results into a zip file.
 
+    Args:
+        results_folder (str): Path to the folder containing inference results.
+        output_path (str, optional): If provided, zip file will be saved here. Otherwise, it defaults to execution directory.
+
+    Returns:
+        str: Path to the generated zip file.
+    """
+    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    zip_filename = f"results_{timestamp}.zip"
+
+    if output_path is None:
+        output_path = os.getcwd()  # Default: Execution directory
+
+    zip_filepath = os.path.join(output_path, zip_filename)
+
+    shutil.make_archive(zip_filepath.replace('.zip', ''), 'zip', results_folder)
+    logging.info(f"✅ Results exported to {zip_filepath}")
+    return zip_filepath
 
 def main():
     """
@@ -58,20 +80,30 @@ def main():
     parser.add_argument("--mode", type=str, choices=["bricks", "studs", "classify"], required=True, help="Select mode: 'bricks', 'studs', or 'classify'")
     parser.add_argument("--save-annotated", action="store_true", help="Save annotated images")
     parser.add_argument("--plt-annotated", action="store_true", help="Display annotated images")
-    
+    parser.add_argument("--export-results", action="store_true", help="Export results as a zip file to execution directory")
+
     args = parser.parse_args()
-    
+
     logging.info("🚀 Starting LEGO Brick Inference...")
 
     # Load the model
     model = load_model(args.mode)
 
-    # Run inference (we will implement predict() next)
-    results = predict(args.image, model, args.mode, args.save_annotated, args.plt_annotated)
+    # Create results folder inside cache
+    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    results_folder = os.path.join("cache/results", f"{args.mode}_{timestamp}")
+    os.makedirs(results_folder, exist_ok=True)
+
+    # Run inference
+    results = predict(args.image, model, args.mode, args.save_annotated, args.plt_annotated, results_folder)
 
     # Print results
     logging.info("✅ Inference complete.")
     logging.info(json.dumps(results, indent=4))
+
+    # Zip results if requested
+    if args.export_results:
+        zip_results(results_folder)
 
 if __name__ == "__main__":
     main()
