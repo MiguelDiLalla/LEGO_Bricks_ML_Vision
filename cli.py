@@ -56,6 +56,19 @@ def cleanup_cache():
             shutil.rmtree(folder)
             logging.info(f"Deleted {folder}")
     logging.info("Cache cleanup complete.")
+
+def process_data(args):
+    """Handles data processing commands."""
+    if args.operation == "labelme-to-yolo":
+        command = ["python3", "pipeline_utils.py", "--convert-labelme", "--input", args.input, "--output", args.output]
+    elif args.operation == "keypoints-to-bboxes":
+        command = ["python3", "pipeline_utils.py", "--convert-keypoints", "--input", args.input, "--output", args.output]
+    elif args.operation == "visualize":
+        command = ["python3", "pipeline_utils.py", "--visualize", "--input", args.input, "--output", args.output]
+    
+    logging.info(f"Executing data processing: {args.operation}")
+    subprocess.run(command)
+
 def main():
     setup_logging()
     parser = argparse.ArgumentParser(description="LEGO ML CLI")
@@ -80,6 +93,13 @@ def main():
     # Cleanup Command
     cleanup_parser = subparsers.add_parser("cleanup", help="Clear cached files")
     cleanup_parser.set_defaults(func=lambda args: cleanup_cache())
+    
+    # Data Processing Command
+    data_parser = subparsers.add_parser("data-processing", help="Perform dataset processing")
+    data_parser.add_argument("operation", choices=["labelme-to-yolo", "keypoints-to-bboxes", "visualize"], help="Data operation")
+    data_parser.add_argument("--input", required=True, help="Input folder path")
+    data_parser.add_argument("--output", required=True, help="Output folder path")
+    data_parser.set_defaults(func=process_data)
 
     args = parser.parse_args()
     if hasattr(args, 'func'):
