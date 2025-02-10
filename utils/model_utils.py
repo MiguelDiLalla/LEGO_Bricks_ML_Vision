@@ -49,7 +49,7 @@ def load_model(mode):
     logging.info(f"🔹 Loading model: {model_path}")
     return YOLO(model_path)
 
-def predict(image_path, model, mode, save_annotated=False, plt_annotated=False, results_folder=None, confidence_threshold=0.5, overlap_threshold=0.5):
+def predict(image_path, model, mode, confidence_threshold=0.5, overlap_threshold=0.5):
     """
     Runs YOLO inference on an image to detect bricks or studs.
 
@@ -57,9 +57,6 @@ def predict(image_path, model, mode, save_annotated=False, plt_annotated=False, 
         image_path (str): Path to the input image.
         model (YOLO): The loaded YOLO model.
         mode (str): One of ["bricks", "studs", "classify"].
-        save_annotated (bool): If True, saves the annotated image.
-        plt_annotated (bool): If True, displays the annotated image.
-        results_folder (str): Folder to store inference results.
         confidence_threshold (float): Minimum confidence score for detections.
         overlap_threshold (float): Overlapping threshold for NMS.
 
@@ -100,13 +97,6 @@ def predict(image_path, model, mode, save_annotated=False, plt_annotated=False, 
     # Apply Non-Maximum Suppression (NMS) to remove duplicate overlapping boxes
     filtered_objects = apply_nms(detected_objects, overlap_threshold)
 
-    # Save and visualize results if requested
-    annotated_image_path = None
-    if save_annotated or plt_annotated:
-        annotated_image_path = save_annotated_image(image, filtered_objects, results_folder, mode)
-        if plt_annotated:
-            visualize_annotated_image(image, filtered_objects)
-
     # Prepare metadata
     metadata = {
         "image_path": image_path,
@@ -114,11 +104,11 @@ def predict(image_path, model, mode, save_annotated=False, plt_annotated=False, 
         "detections": len(filtered_objects),
         "objects": filtered_objects,
         "confidence_threshold": confidence_threshold,
-        "overlap_threshold": overlap_threshold,
-        "annotated_image": annotated_image_path
+        "overlap_threshold": overlap_threshold
     }
 
     return metadata
+
 
 def apply_nms(detections, overlap_threshold):
     """
