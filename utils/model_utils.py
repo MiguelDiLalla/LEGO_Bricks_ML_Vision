@@ -11,6 +11,7 @@ import cv2
 import numpy as np
 import torch
 import shutil
+import zipfile
 import matplotlib.pyplot as plt
 from ultralytics import YOLO
 from PIL import Image, ExifTags
@@ -47,6 +48,125 @@ def load_model(mode):
     
     logging.info(f"🔹 Loading model: {model_path}")
     return YOLO(model_path)
+
+def predict(image_path, model, mode, save_annotated=False, plt_annotated=False, results_folder=None, confidence_threshold=0.5, overlap_threshold=0.5):
+    """
+    Runs YOLO inference on an image to detect bricks or studs.
+
+    Args:
+        image_path (str): Path to the input image.
+        model (YOLO): The loaded YOLO model.
+        mode (str): One of ["bricks", "studs", "classify"].
+        save_annotated (bool): If True, saves the annotated image.
+        plt_annotated (bool): If True, displays the annotated image.
+        results_folder (str): Folder to store inference results.
+        confidence_threshold (float): Minimum confidence score for detections.
+        overlap_threshold (float): Overlapping threshold for NMS.
+
+    Returns:
+        dict: Structured results including detected objects and metadata.
+    """
+    # Validate image path
+    if not os.path.exists(image_path):
+        raise FileNotFoundError(f"[ERROR] Image file not found: {image_path}")
+
+    # Load the image
+    image = cv2.imread(image_path)
+    if image is None:
+        raise ValueError(f"[ERROR] Unable to read image: {image_path}")
+
+    # Convert to RGB (YOLO expects RGB format)
+    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    # Run YOLO inference
+    logging.info(f"🔍 Running inference on {image_path} with mode '{mode}'")
+    results = model.predict(image_rgb)
+
+    # Extract detections
+    detected_objects = []
+    for detection in results[0].boxes:
+        x1, y1, x2, y2 = map(int, detection.xyxy[0])  # Bounding box
+        confidence = float(detection.conf[0])  # Confidence score
+
+        # Apply confidence threshold
+        if confidence < confidence_threshold:
+            continue
+
+        detected_objects.append({
+            "bbox": [x1, y1, x2, y2],
+            "confidence": confidence
+        })
+
+    # Apply Non-Maximum Suppression (NMS) to remove duplicate overlapping boxes
+    filtered_objects = apply_nms(detected_objects, overlap_threshold)
+
+    # Save and visualize results if requested
+    annotated_image_path = None
+    if save_annotated or plt_annotated:
+        annotated_image_path = save_annotated_image(image, filtered_objects, results_folder, mode)
+        if plt_annotated:
+            visualize_annotated_image(image, filtered_objects)
+
+    # Prepare metadata
+    metadata = {
+        "image_path": image_path,
+        "mode": mode,
+        "detections": len(filtered_objects),
+        "objects": filtered_objects,
+        "confidence_threshold": confidence_threshold,
+        "overlap_threshold": overlap_threshold,
+        "annotated_image": annotated_image_path
+    }
+
+    return metadata
+
+def apply_nms(detections, overlap_threshold):
+    """
+    Applies Non-Maximum Suppression (NMS) to filter overlapping bounding boxes.
+
+    Args:
+        detections (list): List of detected objects with bounding boxes.
+        overlap_threshold (float): IoU threshold for suppression.
+
+    Returns:
+        list: Filtered list of detections after NMS.
+    """
+    if not detections:
+        return []
+
+    # Convert to NumPy array for easier calculations
+    boxes = np.array([det["bbox"] for det in detections])
+    scores = np.array([det["confidence"] for det in detections])
+
+    # Apply OpenCV NMS
+    indices = cv2.dnn.NMSBoxes(boxes.tolist(), scores.tolist(), score_threshold=0.5, nms_threshold=overlap_threshold)
+
+    return [detections[i] for i in indices.flatten()]
+
+def save_annotated_image(image, detections, results_folder, mode):
+    """
+    Draws bounding boxes on the image and saves the annotated image.
+
+    Args:
+        image (numpy array): The original image.
+        detections (list): List of bounding boxes to draw.
+        results_folder (str): Folder to save the annotated image.
+        mode (str): Inference mode ('bricks' or 'studs').
+
+    Returns:
+        str: Path to the saved annotated image.
+    """
+    for det in detections:
+        x1, y1, x2, y2 = det["bbox"]
+        cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)  # Green for bricks/studs
+
+    # Define save path
+    filename = f"{mode}_annotated.jpg"
+    save_path = os.path.join(results_folder, filename)
+    cv2.imwrite(save_path, image)
+    logging.info(f"📸 Annotated image saved to {save_path}")
+
+    return save_path
 
 def zip_results(results_folder, output_path=None):
     """
