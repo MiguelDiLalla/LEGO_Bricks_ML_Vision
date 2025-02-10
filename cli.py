@@ -22,14 +22,19 @@ def train_model(args):
     """Executes the training pipeline."""
     logging.info("Starting training...")
     command = [
-        "python3", os.path.join(get_repo_root(), "train.py"),
+        "python3", "train.py",
         "--mode", args.mode,
         "--epochs", str(args.epochs),
         "--batch-size", str(args.batch_size)
     ]
-
+    
     if args.use_pretrained:
         command.append("--use-pretrained")
+    if args.cleanup:
+        command.append("--cleanup")
+    if args.zip_results:
+        command.append("--zip-results")
+    
     subprocess.run(command)
 
 def predict_brick(args):
@@ -44,14 +49,13 @@ def predict_brick(args):
     subprocess.run(command)
 
 def cleanup_cache():
-    """Removes cached datasets and models, but keeps results."""
-    cache_dirs = ["cache/datasets", "cache/models"]
+    """Removes cached datasets and models."""
+    cache_dirs = ["cache", "models", "data"]
     for folder in cache_dirs:
         if os.path.exists(folder):
             shutil.rmtree(folder)
             logging.info(f"Deleted {folder}")
-    logging.info("Cache cleanup complete. Results are preserved.")
-
+    logging.info("Cache cleanup complete.")
 def main():
     setup_logging()
     parser = argparse.ArgumentParser(description="LEGO ML CLI")
@@ -59,11 +63,12 @@ def main():
 
     # Train Command
     train_parser = subparsers.add_parser("train", help="Train a model")
-    train_parser.add_argument("--use-pretrained", action="store_true", help="Use LEGO-trained model instead of YOLOv8n")
     train_parser.add_argument("--mode", required=True, choices=["bricks", "studs"], help="Training mode")
     train_parser.add_argument("--epochs", type=int, default=20, help="Number of epochs")
     train_parser.add_argument("--batch-size", type=int, default=16, help="Batch size")
-    train_parser.add_argument("--force-extract", action="store_true", help="Force re-extraction of dataset")
+    train_parser.add_argument("--use-pretrained", action="store_true", help="Use LEGO-trained model instead of YOLOv8n")
+    train_parser.add_argument("--cleanup", action="store_true", help="Remove cached datasets after training")
+    train_parser.add_argument("--zip-results", action="store_true", help="Compress training results after completion")
     train_parser.set_defaults(func=train_model)
 
     # Predict Command

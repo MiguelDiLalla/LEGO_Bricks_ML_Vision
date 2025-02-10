@@ -1,21 +1,21 @@
 import os
 import logging
+import torch
 import shutil
 import zipfile
 import json
-import argparse
 import random
-import subprocess
+import argparse
 from datetime import datetime
-import torch
+import subprocess
 import cv2
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 import yaml
 from ultralytics import YOLO
 
-#all imports
 
+#all imports
 
 def setup_logging(log_name="train_session"):
     """
@@ -33,34 +33,47 @@ def setup_logging(log_name="train_session"):
             logging.FileHandler(log_file, mode="a")
         ]
     )
-
-    # Ensure immediate flushing
-    for handler in logging.getLogger().handlers:
-        handler.setLevel(logging.INFO)
-        handler.flush = lambda: None  # Enforce immediate write
-
     logging.info(f"Logging initialized: {log_file}")
 
-# Auto-detect repository root
+def cleanup_after_training(dataset_path, dataset_yolo_path):
+    """
+    Cleans up temporary data after training, keeping only final results.
+    """
+    logging.info("🧹 Cleaning up temporary files...")
+
+    # Remove extracted dataset
+    if os.path.exists(dataset_path):
+        shutil.rmtree(dataset_path)
+        logging.info(f"Deleted extracted dataset: {dataset_path}")
+
+    # Remove augmented images
+    train_images_path = os.path.join(dataset_yolo_path, "dataset/images/train")
+    for img_file in os.listdir(train_images_path):
+        if "_aug" in img_file and img_file.endswith(".jpg"):
+            os.remove(os.path.join(train_images_path, img_file))
+    logging.info(f"Deleted augmented images from: {train_images_path}")
+
+    # Remove intermediate YOLO artifacts
+    yolo_cache_path = os.path.join(dataset_yolo_path, "dataset")
+    if os.path.exists(yolo_cache_path):
+        shutil.rmtree(yolo_cache_path)
+        logging.info(f"Deleted YOLO training artifacts: {yolo_cache_path}")
+
+    logging.info("✅ Cleanup complete.")
+
 
 def get_repo_root():
     """
     Auto-detects the repository root directory.
-    Returns:
-        str: Root directory of the repository.
     """
     current_dir = os.path.dirname(os.path.abspath(__file__))
     while current_dir != "/" and not os.path.exists(os.path.join(current_dir, ".git")):
         current_dir = os.path.dirname(current_dir)
     return current_dir if os.path.exists(os.path.join(current_dir, ".git")) else os.getcwd()
 
-# Detect hardware availability
-
 def detect_hardware():
     """
     Detects available hardware for training.
-    Returns:
-        str: Device identifier ('0', '0,1', 'mps', or 'cpu')
     """
     if torch.cuda.is_available():
         num_gpus = torch.cuda.device_count()
@@ -74,6 +87,49 @@ def detect_hardware():
     
     logging.warning("No GPU or MPS device detected. Falling back to CPU.")
     return "cpu"
+def zip_training_results(training_dir, output_dir):
+    """
+    Compresses training results into a zip file for easy retrieval.
+    """
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    zip_filename = os.path.join(output_dir, f"training_results_{timestamp}.zip")
+    with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for root, _, files in os.walk(training_dir):
+            for file in files:
+                file_path = os.path.join(root, file)
+                zipf.write(file_path, os.path.relpath(file_path, training_dir))
+    logging.info(f"✅ Training results compressed into: {zip_filename}")
+    return zip_filename
+
+def export_logs(log_name="train_session"):
+    """
+    Exports logs and hardware details in JSON format.
+    """
+    log_path = os.path.join("logs", f"{log_name}.log")
+    export_path = log_path.replace(".log", ".json")
+    
+    hardware_info = {
+        "python_version": torch.__version__,
+        "cuda_available": torch.cuda.is_available(),
+        "device_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU",
+        "num_gpus": torch.cuda.device_count(),
+        "torch_version": torch.__version__,
+        "timestamp": datetime.now().isoformat()
+    }
+    
+    with open(log_path, "r") as f:
+        log_entries = [line.strip() for line in f.readlines()]
+    
+    session_data = {
+        "hardware_info": hardware_info,
+        "logs": log_entries
+    }
+    
+    with open(export_path, "w") as f:
+        json.dump(session_data, f, indent=4)
+    
+    logging.info(f"✅ Logs exported to {export_path}")
+    return export_path
 
 def setup_execution_structure():
     """
@@ -322,15 +378,15 @@ def select_model(mode, use_pretrained=False):
 
 # Training the model
 
-def train_model(dataset_path, model_path, device, epochs, batch_size):
+def train_model(dataset_path, model_path, device, epochs, batch_size, output_dir):
     """
     Trains the YOLOv8 model with real-time logging and CLI streaming.
     """
     logging.info(f"🚀 Starting training with model: {model_path}")
     
     model = YOLO(model_path)
+    training_name = f"training_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     
-    # Create command for training with real-time output capture
     command = [
         "yolo",
         "train",
@@ -338,23 +394,20 @@ def train_model(dataset_path, model_path, device, epochs, batch_size):
         f"--epochs={epochs}",
         f"--batch={batch_size}",
         f"--device={device}",
-        "--project=cache/results/TrainingSessions",
-        f"--name=training_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+        f"--project={output_dir}",
+        f"--name={training_name}",
         "--exist-ok"
     ]
-
+    
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     
-    # Stream logs in real-time
     for line in iter(process.stdout.readline, ""):
         logging.info(line.strip())  # Log immediately
         print(line.strip())  # Stream to CLI
-
+    
     process.stdout.close()
     process.wait()
-
     logging.info("✅ Training completed.")
-
 
 #zip results
 
@@ -418,42 +471,37 @@ def main():
     """
     Main execution pipeline for training setup and initialization.
     """
-    # Setup logging to capture all events
     setup_logging()
-    
-    # Parse command-line arguments
     args = parse_args()
     
     logging.info("=== LEGO ML Training Pipeline Starting ===")
-    
-    # Detect available hardware (GPU, MPS, or CPU)
     device = detect_hardware()
     logging.info(f"Using device: {device}")
     
-    # Setup necessary directory structure for execution
     setup_execution_structure()
-    
-    # Unzip and prepare the dataset
     dataset_path = unzip_dataset(args.mode, args.force_extract)
     logging.info(f"Dataset ready at: {dataset_path}")
     
-    # Validate the dataset to ensure integrity
     validate_dataset(args.mode)
+    dataset_yolo_path = split_dataset(args.mode)
+    logging.info(f"Dataset split and saved at: {dataset_yolo_path}")
     
-    # Split dataset into training, validation, and test sets
-    dataset_split_path = split_dataset(args.mode)
-    logging.info(f"Dataset split and saved at: {dataset_split_path}")
+    augment_data(dataset_yolo_path)
+    logging.info(f"Augmentation applied to training dataset: {dataset_yolo_path}")
     
-    # Apply data augmentation to the training dataset
-    augment_data(dataset_split_path)
-    logging.info(f"Augmentation applied to training dataset: {dataset_split_path}")
-    
-    # Select the model to use for training (pre-trained or default YOLOv8n)
     model_path = select_model(args.mode, args.use_pretrained)
     logging.info(f"Using model: {model_path}")
     
-    # Train the model with the prepared dataset
-    train_model(dataset_split_path, model_path, device, args.epochs, args.batch_size)
+    output_dir = get_repo_root()  # Store training results in the working directory
+    train_model(dataset_yolo_path, model_path, device, args.epochs, args.batch_size, output_dir)
+    
+    exported_logs = export_logs()
+    
+    if args.zip_results:
+        zip_training_results(output_dir, output_dir)
+    
+    if args.cleanup:
+        cleanup_after_training(dataset_path, dataset_yolo_path)
     
     logging.info("✅ Training pipeline completed successfully.")
 
