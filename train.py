@@ -1,20 +1,21 @@
 import os
 import logging
-import argparse
-import torch
-from datetime import datetime
-
-# Initialize logging
-
-import os
-import logging
 import shutil
-import yaml
-import json
 import zipfile
+import json
+import argparse
+import random
 import subprocess
-from ultralytics import YOLO
 from datetime import datetime
+import torch
+import cv2
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
+import yaml
+from ultralytics import YOLO
+
+#all imports
+
 
 def setup_logging(log_name="train_session"):
     """
@@ -155,16 +156,11 @@ def validate_dataset(mode):
 # create dataset folder tree structure
 def create_dataset_structure(mode):
     """
-    Organizes extracted dataset into YOLO format and creates dataset.yaml.
-
-    Args:
-        mode (str): 'bricks' or 'studs', defining dataset location.
+    Creates necessary dataset directories but does not handle splitting.
     """
     repo_root = get_repo_root()
-    dataset_path = os.path.join(repo_root, "cache/datasets", mode)
     output_dir = os.path.join(repo_root, "cache/datasets", f"{mode}_yolo")
 
-    # YOLO structure directories
     yolo_dirs = [
         "dataset/images/train",
         "dataset/images/val",
@@ -174,24 +170,11 @@ def create_dataset_structure(mode):
         "dataset/labels/test"
     ]
     
-    # Create YOLO structure
     for yolo_dir in yolo_dirs:
         os.makedirs(os.path.join(output_dir, yolo_dir), exist_ok=True)
 
-    # Get all images and labels
-    images_path = os.path.join(dataset_path, "images")
-    labels_path = os.path.join(dataset_path, "labels")
-
-    image_files = sorted([f for f in os.listdir(images_path) if f.endswith(".jpg")])
-    label_files = sorted([f for f in os.listdir(labels_path) if f.endswith(".txt")])
-
-    # Split into train (70%), val (20%), test (10%)
-    num_train = int(len(image_files) * 0.7)
-    num_val = int(len(image_files) * 0.2)
-    
-    train_files = image_files[:num_train]
-    val_files = image_files[num_train:num_train + num_val]
-    test_files = image_files[num_train + num_val:]
+    logging.info(f"✅ Dataset structure created at {output_dir}")
+    return output_dir
 
     # Helper function to move files
     def move_files(files, img_dst, lbl_dst):
@@ -219,6 +202,94 @@ def create_dataset_structure(mode):
 
     logging.info(f"✅ Dataset structure created at {output_dir}")
     return output_dir
+
+#splitting the dataset
+def split_dataset(mode):
+    """
+    Splits dataset into train (70%), val (20%), test (10%) and updates dataset.yaml.
+    """
+    repo_root = get_repo_root()
+    dataset_path = os.path.join(repo_root, "cache/datasets", mode)
+    output_dir = os.path.join(repo_root, "cache/datasets", f"{mode}_yolo")
+
+    images_path = os.path.join(dataset_path, "images")
+    labels_path = os.path.join(dataset_path, "labels")
+
+    image_files = sorted([f for f in os.listdir(images_path) if f.endswith(".jpg")])
+    random.shuffle(image_files)
+
+    num_train = int(len(image_files) * 0.7)
+    num_val = int(len(image_files) * 0.2)
+
+    train_files = image_files[:num_train]
+    val_files = image_files[num_train:num_train + num_val]
+    test_files = image_files[num_train + num_val:]
+
+    def move_files(files, img_dst, lbl_dst):
+        for f in files:
+            shutil.copy(os.path.join(images_path, f), os.path.join(output_dir, img_dst, f))
+            shutil.copy(os.path.join(labels_path, f.replace(".jpg", ".txt")), os.path.join(output_dir, lbl_dst, f.replace(".jpg", ".txt")))
+
+    move_files(train_files, "dataset/images/train", "dataset/labels/train")
+    move_files(val_files, "dataset/images/val", "dataset/labels/val")
+    move_files(test_files, "dataset/images/test", "dataset/labels/test")
+
+    dataset_yaml = {
+        "path": output_dir,
+        "train": "dataset/images/train",
+        "val": "dataset/images/val",
+        "test": "dataset/images/test",
+        "nc": 1,
+        "names": ["lego_brick"] if mode == "bricks" else ["lego_stud"]
+    }
+
+    with open(os.path.join(output_dir, "dataset.yaml"), "w") as f:
+        yaml.dump(dataset_yaml, f, default_flow_style=False)
+
+    logging.info(f"✅ Dataset split completed. Updated dataset.yaml at {output_dir}")
+    return output_dir
+
+#augmenting the dataset
+def augment_data(dataset_path, augmentations=2):
+    """
+    Augments training dataset using Albumentations.
+
+    Args:
+        dataset_path (str): Path to YOLO dataset.
+        augmentations (int): Number of augmentations per image.
+    """
+    train_images_path = os.path.join(dataset_path, "dataset/images/train")
+    train_labels_path = os.path.join(dataset_path, "dataset/labels/train")
+
+    augmentation_pipeline = A.Compose([
+        A.HorizontalFlip(p=0.5),
+        A.RandomBrightnessContrast(p=0.2),
+        A.Rotate(limit=15, p=0.5),
+        A.GaussianBlur(p=0.2),
+        A.ColorJitter(p=0.2),
+        ToTensorV2()
+    ])
+
+    for img_file in os.listdir(train_images_path):
+        if not img_file.endswith(".jpg"):
+            continue
+
+        img_path = os.path.join(train_images_path, img_file)
+        label_path = os.path.join(train_labels_path, img_file.replace(".jpg", ".txt"))
+
+        image = cv2.imread(img_path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        for i in range(augmentations):
+            augmented = augmentation_pipeline(image=image)["image"]
+            aug_img_name = img_file.replace(".jpg", f"_aug{i}.jpg")
+            aug_img_path = os.path.join(train_images_path, aug_img_name)
+            cv2.imwrite(aug_img_path, augmented)
+
+            aug_label_name = label_path.replace(".txt", f"_aug{i}.txt")
+            shutil.copy(label_path, aug_label_name)
+
+    logging.info(f"✅ Data augmentation completed with {augmentations} augmentations per image.")
 
 # slecting the model to train
 def select_model(mode, use_pretrained=False):
@@ -347,25 +418,42 @@ def main():
     """
     Main execution pipeline for training setup and initialization.
     """
+    # Setup logging to capture all events
     setup_logging()
+    
+    # Parse command-line arguments
     args = parse_args()
     
     logging.info("=== LEGO ML Training Pipeline Starting ===")
+    
+    # Detect available hardware (GPU, MPS, or CPU)
     device = detect_hardware()
     logging.info(f"Using device: {device}")
     
+    # Setup necessary directory structure for execution
     setup_execution_structure()
+    
+    # Unzip and prepare the dataset
     dataset_path = unzip_dataset(args.mode, args.force_extract)
     logging.info(f"Dataset ready at: {dataset_path}")
     
+    # Validate the dataset to ensure integrity
     validate_dataset(args.mode)
-    dataset_yolo_path = create_dataset_structure(args.mode)
-    logging.info(f"Dataset organized at: {dataset_yolo_path}")
     
+    # Split dataset into training, validation, and test sets
+    dataset_split_path = split_dataset(args.mode)
+    logging.info(f"Dataset split and saved at: {dataset_split_path}")
+    
+    # Apply data augmentation to the training dataset
+    augment_data(dataset_split_path)
+    logging.info(f"Augmentation applied to training dataset: {dataset_split_path}")
+    
+    # Select the model to use for training (pre-trained or default YOLOv8n)
     model_path = select_model(args.mode, args.use_pretrained)
     logging.info(f"Using model: {model_path}")
     
-    train_model(dataset_yolo_path, model_path, device, args.epochs, args.batch_size)
+    # Train the model with the prepared dataset
+    train_model(dataset_split_path, model_path, device, args.epochs, args.batch_size)
     
     logging.info("✅ Training pipeline completed successfully.")
 
