@@ -14,9 +14,10 @@ import shutil
 import zipfile
 import matplotlib.pyplot as plt
 from ultralytics import YOLO
-from PIL import Image, ExifTags
+import piexif
 import cv2
 from PIL import Image, ImageDraw, ImageFont, ExifTags
+
 
 # Setup logging
 logging.basicConfig(
@@ -379,6 +380,25 @@ def visualize_grid(images_folder_path, detections_dict=None, mode='bricks', grid
     cv2.imwrite(grid_path, grid_image_bgr)
 
     return grid_path
+
+def add_metadata(image_path, output_path, user_comment):
+    """
+    Adds a user comment to the EXIF metadata of an image.
+
+    Args:
+        image_path (str): Path to the input image.
+        output_path (str): Path to save the image with added metadata.
+        user_comment (str): Comment to add to the image's EXIF data.
+    """
+    image = Image.open(image_path)
+    exif_dict = piexif.load(image.info.get('exif', b''))
+
+    # Add user comment
+    exif_dict['Exif'][piexif.ExifIFD.UserComment] = piexif.helper.UserComment.dump(user_comment, encoding="unicode")
+
+    # Save image with new EXIF data
+    exif_bytes = piexif.dump(exif_dict)
+    image.save(output_path, "jpeg", exif=exif_bytes)
 
 def save_annotated_image(image_path, detections=None, destination_folder=None, logo_path="presentation/logo.png"):
     """
