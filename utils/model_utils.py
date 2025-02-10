@@ -15,6 +15,7 @@ import zipfile
 import matplotlib.pyplot as plt
 from ultralytics import YOLO
 from PIL import Image, ExifTags
+import cv2
 
 # Setup logging
 logging.basicConfig(
@@ -48,6 +49,30 @@ def load_model(mode):
     
     logging.info(f"🔹 Loading model: {model_path}")
     return YOLO(model_path)
+
+def apply_nms(detections, overlap_threshold):
+    """
+    Applies Non-Maximum Suppression (NMS) to filter overlapping bounding boxes.
+
+    Args:
+        detections (list): List of detected objects with bounding boxes.
+        overlap_threshold (float): IoU threshold for suppression.
+
+    Returns:
+        list: Filtered list of detections after NMS.
+    """
+    if not detections:
+        return []
+
+    # Convert to NumPy array for easier calculations
+    boxes = np.array([det["bbox"] for det in detections])
+    scores = np.array([det["confidence"] for det in detections])
+
+    # Apply OpenCV NMS
+    indices = cv2.dnn.NMSBoxes(boxes.tolist(), scores.tolist(), score_threshold=0.5, nms_threshold=overlap_threshold)
+
+    return [detections[i] for i in indices.flatten()]
+
 
 def predict(image_paths, model, mode, confidence_threshold=0.5, overlap_threshold=0.5):
     """
@@ -112,6 +137,18 @@ def predict(image_paths, model, mode, confidence_threshold=0.5, overlap_threshol
         batch_metadata.append(metadata)
 
     return batch_metadata
+
+STUD_TO_DIMENSION_MAP = {
+    1: "1x1",
+    2: "2x1",
+    3: "3x1",
+    4: ["2x2", "4x1"],
+    6: ["3x2", "6x1"],
+    8: ["4x2", "8x1"],
+    10: "10x1",
+    12: "6x2",
+    16: "8x2",
+}
 
 def classify_brick(brick_image, model_studs, confidence_threshold=0.5):
     """
@@ -212,29 +249,144 @@ def detect_and_classify(image_paths, model_bricks, model_studs, confidence_thres
 
     return results
 
-
-def apply_nms(detections, overlap_threshold):
+def draw_bboxes(image, detections, with_labels=True, box_color=(0, 255, 0), text_color=(255, 255, 255), thickness=2, font_scale=0.5):
     """
-    Applies Non-Maximum Suppression (NMS) to filter overlapping bounding boxes.
+    Draws bounding boxes with optional labels on an image.
 
     Args:
-        detections (list): List of detected objects with bounding boxes.
-        overlap_threshold (float): IoU threshold for suppression.
+        image (numpy.ndarray): The input image on which to draw.
+        detections (list of dict): Each dict should have 'bbox' (list of [x1, y1, x2, y2]),
+                                   'confidence' (float), and 'dimension' (str) keys.
+        with_labels (bool): If True, labels the boxes with dimension and confidence.
+        box_color (tuple): Color of the bounding box in BGR format.
+        text_color (tuple): Color of the text in BGR format.
+        thickness (int): Thickness of the bounding box lines.
+        font_scale (float): Scale of the font for labels.
 
     Returns:
-        list: Filtered list of detections after NMS.
+        numpy.ndarray: The image with drawn bounding boxes.
     """
-    if not detections:
-        return []
+    for det in detections:
+        x1, y1, x2, y2 = det['bbox']
+        cv2.rectangle(image, (x1, y1), (x2, y2), box_color, thickness)
 
-    # Convert to NumPy array for easier calculations
-    boxes = np.array([det["bbox"] for det in detections])
-    scores = np.array([det["confidence"] for det in detections])
+        if with_labels:
+            label = f"{det['dimension']} ({det['confidence']:.2f})"
+            (w, h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)
+            cv2.rectangle(image, (x1, y1 - h - 5), (x1 + w, y1), box_color, -1)
+            cv2.putText(image, label, (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, font_scale, text_color, thickness)
 
-    # Apply OpenCV NMS
-    indices = cv2.dnn.NMSBoxes(boxes.tolist(), scores.tolist(), score_threshold=0.5, nms_threshold=overlap_threshold)
+    return image
 
-    return [detections[i] for i in indices.flatten()]
+def visualize_single_image(image_path, detections=None, with_labels=True, cache_dir="cache"):
+    """
+    Generates an annotated image with metadata displayed below and saves it to the cache.
+
+    Args:
+        image_path (str): Path to the image file.
+        detections (list of dict, optional): Detections to draw on the image.
+        with_labels (bool): If True, displays labels on the bounding boxes.
+        cache_dir (str): Directory to save the cached image.
+
+    Returns:
+        str: Path to the saved annotated image in the cache.
+    """
+    # Load image
+    image = cv2.imread(image_path)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    # Draw bounding boxes if detections are provided
+    if detections:
+        image = draw_bboxes(image, detections, with_labels)
+
+    # Extract EXIF metadata
+    pil_image = Image.open(image_path)
+    exif_data = pil_image._getexif()
+    metadata = ""
+    if exif_data:
+        for tag_id, value in exif_data.items():
+            tag = TAGS.get(tag_id, tag_id)
+            metadata += f"{tag}: {value}\n"
+
+    # Create figure with space for metadata
+    fig, ax = plt.subplots(figsize=(8, 10))
+    ax.imshow(image)
+    ax.axis('off')
+
+    # Add metadata below the image
+    plt.figtext(0.5, 0.01, metadata, wrap=True, horizontalalignment='center', fontsize=10)
+
+    # Save to cache
+    os.makedirs(cache_dir, exist_ok=True)
+    cached_image_path = os.path.join(cache_dir, os.path.basename(image_path))
+    plt.savefig(cached_image_path, bbox_inches='tight', pad_inches=0.5)
+    plt.close()
+
+    return cached_image_path
+
+def visualize_grid(images_folder_path, detections_dict=None, mode='bricks', max_number=12, cache_dir="cache"):
+    """
+    Creates a grid of images with optional bounding boxes and labels, appends metadata below, and saves it to the cache.
+
+    Args:
+        images_folder_path (str): Path to the folder containing images.
+        detections_dict (dict, optional): Dictionary where keys are image filenames and values are detection lists.
+        mode (str): Mode of visualization ('bricks', 'studs', 'classify').
+        max_number (int): Maximum number of images to display.
+        cache_dir (str): Directory to save the cached image.
+
+    Returns:
+        str: Path to the saved grid image in the cache.
+    """
+    # Ensure cache directory exists
+    os.makedirs(cache_dir, exist_ok=True)
+
+    # Get list of image files
+    image_files = [f for f in os.listdir(images_folder_path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+    image_files = image_files[:max_number]
+
+    num_images = len(image_files)
+    cols = 4
+    rows = ceil(num_images / cols)
+
+    fig, axes = plt.subplots(rows, cols, figsize=(15, 5 * rows))
+    axes = axes.flatten()
+
+    metadata = ""
+
+    for ax, img_file in zip(axes, image_files):
+        img_path = os.path.join(images_folder_path, img_file)
+        image = cv2.imread(img_path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        if detections_dict and img_file in detections_dict:
+            image = draw_bboxes(image, detections_dict[img_file], with_labels=True)
+
+        ax.imshow(image)
+        ax.set_title(f"{img_file} - {mode}")
+        ax.axis('off')
+
+        # Extract EXIF metadata
+        pil_image = Image.open(img_path)
+        exif_data = pil_image._getexif()
+        if exif_data:
+            for tag_id, value in exif_data.items():
+                tag = TAGS.get(tag_id, tag_id)
+                metadata += f"{img_file} - {tag}: {value}\n"
+
+    for ax in axes[num_images:]:
+        fig.delaxes(ax)
+
+    # Add metadata below the grid
+    fig.text(0.5, -0.05, metadata, wrap=True, horizontalalignment='center', fontsize=10)
+
+    # Save to cache
+    cached_image_path = os.path.join(cache_dir, f"grid_{mode}.png")
+    plt.savefig(cached_image_path, bbox_inches='tight', pad_inches=0.5)
+    plt.close()
+
+    return cached_image_path
+
 
 def save_annotated_image(image, detections, results_folder, mode):
     """
