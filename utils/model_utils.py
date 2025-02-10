@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 from ultralytics import YOLO
 from PIL import Image, ExifTags
 import cv2
+from PIL import Image, ImageDraw, ImageFont, ExifTags
 
 # Setup logging
 logging.basicConfig(
@@ -324,16 +325,16 @@ def visualize_single_image(image_path, detections=None, with_labels=True, cache_
 
     return cached_image_path
 
-def visualize_grid(images_folder_path, detections_dict=None, mode='bricks', max_number=12, cache_dir="cache"):
+def visualize_grid(images_folder_path, detections_dict=None, mode='bricks', grid_dimensions=(2, 2), cache_dir="cache"):
     """
-    Creates a grid of images with optional bounding boxes and labels, appends metadata below, and saves it to the cache.
+    Creates a grid of images with optional bounding boxes and labels, and saves it to the cache.
 
     Args:
         images_folder_path (str): Path to the folder containing images.
         detections_dict (dict, optional): Dictionary where keys are image filenames and values are detection lists.
         mode (str): Mode of visualization ('bricks', 'studs', 'classify').
-        max_number (int): Maximum number of images to display.
-        cache_dir (str): Directory to save the cached image.
+        grid_dimensions (tuple): Dimensions of the grid (rows, cols).
+        cache_dir (str): Directory to save the generated grid image.
 
     Returns:
         str: Path to the saved grid image in the cache.
@@ -341,77 +342,116 @@ def visualize_grid(images_folder_path, detections_dict=None, mode='bricks', max_
     # Ensure cache directory exists
     os.makedirs(cache_dir, exist_ok=True)
 
-    # Get list of image files
+    # Retrieve image files
     image_files = [f for f in os.listdir(images_folder_path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
-    image_files = image_files[:max_number]
+    selected_images = image_files[:grid_dimensions[0] * grid_dimensions[1]]
 
-    num_images = len(image_files)
-    cols = 4
-    rows = ceil(num_images / cols)
-
-    fig, axes = plt.subplots(rows, cols, figsize=(15, 5 * rows))
-    axes = axes.flatten()
-
-    metadata = ""
-
-    for ax, img_file in zip(axes, image_files):
+    # Load images and apply detections if available
+    images = []
+    for img_file in selected_images:
         img_path = os.path.join(images_folder_path, img_file)
         image = cv2.imread(img_path)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
         if detections_dict and img_file in detections_dict:
             image = draw_bboxes(image, detections_dict[img_file], with_labels=True)
+        images.append(image)
 
-        ax.imshow(image)
-        ax.set_title(f"{img_file} - {mode}")
-        ax.axis('off')
+    # Determine max width and height for resizing
+    max_width = max(image.shape[1] for image in images)
+    max_height = max(image.shape[0] for image in images)
 
-        # Extract EXIF metadata
-        pil_image = Image.open(img_path)
-        exif_data = pil_image._getexif()
-        if exif_data:
-            for tag_id, value in exif_data.items():
-                tag = TAGS.get(tag_id, tag_id)
-                metadata += f"{img_file} - {tag}: {value}\n"
+    # Resize images to have the same dimensions
+    resized_images = [cv2.resize(image, (max_width, max_height)) for image in images]
 
-    for ax in axes[num_images:]:
-        fig.delaxes(ax)
+    # Create the grid
+    rows, cols = grid_dimensions
+    grid_image = np.zeros((rows * max_height, cols * max_width, 3), dtype=np.uint8)
 
-    # Add metadata below the grid
-    fig.text(0.5, -0.05, metadata, wrap=True, horizontalalignment='center', fontsize=10)
+    for idx, image in enumerate(resized_images):
+        row = idx // cols
+        col = idx % cols
+        grid_image[row * max_height:(row + 1) * max_height, col * max_width:(col + 1) * max_width, :] = image
 
-    # Save to cache
-    cached_image_path = os.path.join(cache_dir, f"grid_{mode}.png")
-    plt.savefig(cached_image_path, bbox_inches='tight', pad_inches=0.5)
-    plt.close()
+    # Save the grid image to cache
+    grid_filename = f"{mode}_grid.jpg"
+    grid_path = os.path.join(cache_dir, grid_filename)
+    grid_image_bgr = cv2.cvtColor(grid_image, cv2.COLOR_RGB2BGR)
+    cv2.imwrite(grid_path, grid_image_bgr)
 
-    return cached_image_path
+    return grid_path
 
-
-def save_annotated_image(image, detections, results_folder, mode):
+def save_annotated_image(image_path, detections=None, destination_folder=None, logo_path="presentation/logo.png"):
     """
-    Draws bounding boxes on the image and saves the annotated image.
+    Saves an annotated image with a logo overlay and formatted EXIF metadata.
 
     Args:
-        image (numpy array): The original image.
-        detections (list): List of bounding boxes to draw.
-        results_folder (str): Folder to save the annotated image.
-        mode (str): Inference mode ('bricks' or 'studs').
+        image_path (str): Path to the input image.
+        detections (list of dict, optional): Detections to draw on the image.
+        destination_folder (str, optional): Directory to save the final image. Defaults to current working directory.
+        logo_path (str): Path to the logo image for branding.
 
     Returns:
         str: Path to the saved annotated image.
     """
-    for det in detections:
-        x1, y1, x2, y2 = det["bbox"]
-        cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)  # Green for bricks/studs
+    # Load the original image
+    image = cv2.imread(image_path)
+    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-    # Define save path
-    filename = f"{mode}_annotated.jpg"
-    save_path = os.path.join(results_folder, filename)
-    cv2.imwrite(save_path, image)
-    logging.info(f"📸 Annotated image saved to {save_path}")
+    # Draw bounding boxes if detections are provided
+    if detections:
+        image_rgb = draw_bboxes(image_rgb, detections, with_labels=True)
 
-    return save_path
+    # Convert to PIL Image for easier manipulation
+    pil_image = Image.fromarray(image_rgb)
+
+    # Load the logo image
+    if os.path.exists(logo_path):
+        logo = Image.open(logo_path).convert("RGBA")
+        logo_width, logo_height = logo.size
+    else:
+        raise FileNotFoundError(f"Logo file not found at {logo_path}")
+
+    # Position the logo at the bottom-right corner with a margin
+    margin = 10
+    image_width, image_height = pil_image.size
+    logo_position = (image_width - logo_width - margin, image_height - logo_height - margin)
+
+    # Overlay the logo onto the image
+    pil_image.paste(logo, logo_position, logo)
+
+    # Extract EXIF metadata
+    exif_data = pil_image._getexif()
+    if exif_data:
+        exif = {ExifTags.TAGS.get(tag, tag): value for tag, value in exif_data.items()}
+    else:
+        exif = {}
+
+    # Format metadata as a console-style dictionary
+    metadata_str = "Metadata:\n" + "\n".join(f"{key}: {value}" for key, value in exif.items())
+
+    # Create a new image to append below the original for metadata
+    font = ImageFont.load_default()
+    text_size = font.getsize_multiline(metadata_str)
+    metadata_image = Image.new("RGB", (image_width, text_size[1] + margin), (255, 255, 255))
+    draw = ImageDraw.Draw(metadata_image)
+    draw.text((margin, margin // 2), metadata_str, font=font, fill=(0, 0, 0))
+
+    # Combine the original image with the metadata image
+    combined_image = Image.new("RGB", (image_width, image_height + metadata_image.height))
+    combined_image.paste(pil_image, (0, 0))
+    combined_image.paste(metadata_image, (0, image_height))
+
+    # Ensure the destination directory exists
+    if destination_folder is None:
+        destination_folder = os.getcwd()
+    os.makedirs(destination_folder, exist_ok=True)
+
+    # Save the final image
+    output_filename = os.path.basename(image_path)
+    output_path = os.path.join(destination_folder, output_filename)
+    combined_image.save(output_path)
+
+    return output_path
 
 def zip_results(results_folder, output_path=None):
     """
@@ -438,60 +478,35 @@ def zip_results(results_folder, output_path=None):
 
 def main():
     """
-    Main execution function for LEGO Brick Classification & Detection.
+    Main function to process and brand images for portfolio presentation.
     """
-    parser = argparse.ArgumentParser(description="LEGO Brick Classification & Detection")
-    parser.add_argument("--images", type=str, nargs='+', required=True, help="Paths to the input images")
-    parser.add_argument("--mode", type=str, choices=["bricks", "studs", "classify"], required=True, help="Select mode: 'bricks', 'studs', or 'classify'")
-    parser.add_argument("--save-annotated", action="store_true", help="Save annotated images")
-    parser.add_argument("--plt-annotated", action="store_true", help="Display annotated images")
-    parser.add_argument("--export-results", action="store_true", help="Export results as a zip file to execution directory")
-    parser.add_argument("--confidence-threshold", type=float, default=0.5, help="Confidence threshold for detections")
-    parser.add_argument("--overlap-threshold", type=float, default=0.5, help="Overlap threshold for Non-Maximum Suppression")
+    parser = argparse.ArgumentParser(description="LEGO Brick Branding Processor")
+    parser.add_argument("--source", type=str, required=True, help="Path to an image or a directory of images")
+    parser.add_argument("--mode", type=str, choices=["bricks", "studs", "classify"], required=True, help="Processing mode")
+    parser.add_argument("--destination", type=str, default=os.getcwd(), help="Destination folder to save processed images")
+    parser.add_argument("--grid-dimensions", type=int, nargs=2, metavar=('rows', 'cols'), default=(2, 2), help="Grid dimensions for multiple images (rows cols)")
 
     args = parser.parse_args()
 
-    logging.info("🚀 Starting LEGO Brick Inference...")
+    logging.info("🚀 Starting the branding process...")
 
-    # Load the appropriate model(s) based on the mode
-    if args.mode == "classify":
-        model_bricks = load_model("bricks")
-        model_studs = load_model("studs")
+    # Ensure the destination directory exists
+    os.makedirs(args.destination, exist_ok=True)
+
+    if os.path.isfile(args.source):
+        # Process a single image
+        detections = predict(args.source, args.mode)
+        save_annotated_image(args.source, detections, destination_folder=args.destination)
+    elif os.path.isdir(args.source):
+        # Process a directory of images
+        image_files = [os.path.join(args.source, f) for f in os.listdir(args.source) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+        selected_images = random.sample(image_files, min(len(image_files), args.grid_dimensions[0] * args.grid_dimensions[1]))
+        detections_dict = {img: predict(img, args.mode) for img in selected_images}
+        visualize_grid(selected_images, detections_dict, args.mode, args.grid_dimensions, args.destination)
     else:
-        model = load_model(args.mode)
+        logging.error("Invalid source path provided. Please provide a valid image file or directory.")
 
-    # Create results folder inside cache
-    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    results_folder = os.path.join("cache/results", f"{args.mode}_{timestamp}")
-    os.makedirs(results_folder, exist_ok=True)
-
-    # Run inference
-    if args.mode == "classify":
-        results = detect_and_classify(
-            image_paths=args.images,
-            model_bricks=model_bricks,
-            model_studs=model_studs,
-            confidence_threshold=args.confidence_threshold,
-            overlap_threshold=args.overlap_threshold
-        )
-    else:
-        results = predict(
-            image_paths=args.images,
-            model=model,
-            mode=args.mode,
-            confidence_threshold=args.confidence_threshold,
-            overlap_threshold=args.overlap_threshold
-        )
-
-    # Print results
-    logging.info("✅ Inference complete.")
-    for result in results:
-        logging.info(json.dumps(result, indent=4))
-
-    # Zip results if requested
-    if args.export_results:
-        zip_results(results_folder)
-
+    logging.info("✅ Branding process completed.")
 
 if __name__ == "__main__":
     main()
