@@ -395,7 +395,7 @@ def augment_data(dataset_path, augmentations=2):
             shutil.copy(label_path, aug_label_name)
 
     logging.info(f"✅ Data augmentation completed with {augmentations} augmentations per image.")
-    
+
 # slecting the model to train
 def select_model(mode, use_pretrained=False):
     """
@@ -439,13 +439,13 @@ def train_model(dataset_path, model_path, device, epochs, batch_size, output_dir
     command = [
         "yolo",
         "train",
-        f"data={dataset_path}",
+        f"data={dataset_path}/dataset.yaml",  # ✅ Append dataset.yaml
         f"epochs={epochs}",
         f"batch={batch_size}",
         f"device={device}",
         f"project={output_dir}",
         f"name={training_name}",
-        "exist_ok=True"  # ✅ Corrected syntax
+        "exist_ok=True"
     ]
     
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
