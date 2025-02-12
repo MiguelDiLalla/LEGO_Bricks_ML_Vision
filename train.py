@@ -309,6 +309,17 @@ def split_dataset(mode):
     val_files = image_files[num_train:num_train + num_val]
     test_files = image_files[num_train + num_val:]
 
+    # Ensure destination folders exist
+    def ensure_folder_exists(path):
+        os.makedirs(path, exist_ok=True)
+
+    ensure_folder_exists(os.path.join(output_dir, "dataset/images/train"))
+    ensure_folder_exists(os.path.join(output_dir, "dataset/images/val"))
+    ensure_folder_exists(os.path.join(output_dir, "dataset/images/test"))
+    ensure_folder_exists(os.path.join(output_dir, "dataset/labels/train"))
+    ensure_folder_exists(os.path.join(output_dir, "dataset/labels/val"))
+    ensure_folder_exists(os.path.join(output_dir, "dataset/labels/test"))
+
     def move_files(files, img_dst, lbl_dst):
         for f in files:
             shutil.copy(os.path.join(images_path, f), os.path.join(output_dir, img_dst, f))
@@ -511,6 +522,10 @@ def main():
     logging.info(f"Dataset ready at: {dataset_path}")
     
     validate_dataset(args.mode)
+    
+    # ✅ FIX: Ensure dataset structure exists before splitting
+    create_dataset_structure(args.mode)  
+    
     dataset_yolo_path = split_dataset(args.mode)
     logging.info(f"Dataset split and saved at: {dataset_yolo_path}")
     
@@ -533,5 +548,6 @@ def main():
     
     logging.info("✅ Training pipeline completed successfully.")
 
+    
 if __name__ == "__main__":
     main()
