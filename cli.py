@@ -38,34 +38,37 @@ def train_model(args):
     subprocess.run(command)
 
 def predict_brick(args):
-    """Runs inference on an image."""
+    """Runs inference using model_utils.py."""
     logging.info(f"Running inference on {args.image}")
     command = [
-        "python3", "pipeline_utils.py",
+        "python3", "model_utils.py",
         "--image", args.image
     ]
     if args.save_annotated:
         command.append("--save-annotated")
+    if args.output:
+        command.extend(["--output", args.output])
     subprocess.run(command)
 
 def cleanup_cache():
-    """Removes cached datasets and models."""
-    cache_dirs = ["cache", "models", "data"]
-    for folder in cache_dirs:
-        if os.path.exists(folder):
-            shutil.rmtree(folder)
-            logging.info(f"Deleted {folder}")
-    logging.info("Cache cleanup complete.")
+    """Removes cached datasets and models with user confirmation."""
+    cache_dirs = ["cache/datasets", "cache/models", "cache/results", "cache/logs"]
+    logging.info("⚠️ WARNING: This will delete cached datasets and models.")
+    confirm = input("Are you sure? (y/N): ").strip().lower()
+    if confirm == 'y':
+        for folder in cache_dirs:
+            if os.path.exists(folder):
+                shutil.rmtree(folder)
+                logging.info(f"Deleted {folder}")
+        logging.info("✅ Cache cleanup complete.")
+    else:
+        logging.info("Cache cleanup aborted.")
 
 def process_data(args):
     """Handles data processing commands."""
-    if args.operation == "labelme-to-yolo":
-        command = ["python3", "pipeline_utils.py", "--convert-labelme", "--input", args.input, "--output", args.output]
-    elif args.operation == "keypoints-to-bboxes":
-        command = ["python3", "pipeline_utils.py", "--convert-keypoints", "--input", args.input, "--output", args.output]
-    elif args.operation == "visualize":
-        command = ["python3", "pipeline_utils.py", "--visualize", "--input", args.input, "--output", args.output]
-    
+    command = ["python3", "data_utils.py", f"--{args.operation}", "--input", args.input, "--output", args.output]
+    if args.operation == "keypoints-to-bboxes" and args.area_ratio:
+        command.extend(["--area-ratio", str(args.area_ratio)])
     logging.info(f"Executing data processing: {args.operation}")
     subprocess.run(command)
 
@@ -88,6 +91,7 @@ def main():
     predict_parser = subparsers.add_parser("predict", help="Run inference on an image")
     predict_parser.add_argument("--image", required=True, help="Path to image file")
     predict_parser.add_argument("--save-annotated", action="store_true", help="Save annotated results")
+    predict_parser.add_argument("--output", required=False, help="Output folder for predictions")
     predict_parser.set_defaults(func=predict_brick)
 
     # Cleanup Command
@@ -99,6 +103,7 @@ def main():
     data_parser.add_argument("operation", choices=["labelme-to-yolo", "keypoints-to-bboxes", "visualize"], help="Data operation")
     data_parser.add_argument("--input", required=True, help="Input folder path")
     data_parser.add_argument("--output", required=True, help="Output folder path")
+    data_parser.add_argument("--area-ratio", type=float, help="Total area ratio for bounding boxes (only for keypoints-to-bboxes)")
     data_parser.set_defaults(func=process_data)
 
     args = parser.parse_args()

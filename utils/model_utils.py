@@ -76,69 +76,90 @@ def apply_nms(detections, overlap_threshold):
     return [detections[i] for i in indices.flatten()]
 
 
-def predict(image_paths, model, mode, confidence_threshold=0.5, overlap_threshold=0.5):
+def predict(image_paths, model, mode, batch_size=8, save_annotated=False, plt_annotated=False, results_folder=None):
     """
-    Runs YOLO inference on a batch of images to detect bricks or studs.
+    Perform batch prediction on a list of images.
 
     Args:
-        image_paths (list of str): List of paths to the input images.
-        model (YOLO): The loaded YOLO model.
-        mode (str): One of ["bricks", "studs", "classify"].
-        confidence_threshold (float): Minimum confidence score for detections.
-        overlap_threshold (float): Overlapping threshold for NMS.
+        image_paths (list): List of paths to input images.
+        model (YOLO): Loaded YOLO model.
+        mode (str): Inference mode ('bricks', 'studs', 'classify').
+        batch_size (int): Number of images to process in a batch.
+        save_annotated (bool): Flag to save annotated images.
+        plt_annotated (bool): Flag to display annotated images.
+        results_folder (str): Directory to save results.
 
     Returns:
-        list of dict: Structured results for each image, including detected objects and metadata.
+        list: Inference results for all images.
     """
-    # Validate image paths
-    for path in image_paths:
-        if not os.path.exists(path):
-            raise FileNotFoundError(f"[ERROR] Image file not found: {path}")
+    results = []
+    num_images = len(image_paths)
+    logging.info(f"Total images to process: {num_images}")
 
-    # Load and preprocess images
-    images = []
-    for path in image_paths:
-        image = cv2.imread(path)
-        if image is None:
-            raise ValueError(f"[ERROR] Unable to read image: {path}")
-        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        images.append(image_rgb)
+    for i in range(0, num_images, batch_size):
+        batch_paths = image_paths[i:i + batch_size]
+        batch_images = [cv2.imread(img_path) for img_path in batch_paths]
 
-    # Run YOLO inference on the batch of images
-    logging.info(f"🔍 Running inference on {len(images)} images with mode '{mode}'")
-    results = model.predict(images)
+        # Check for any failed image loads
+        for idx, img in enumerate(batch_images):
+            if img is None:
+                logging.warning(f"Failed to load image: {batch_paths[idx]}")
+                batch_images.pop(idx)
+                batch_paths.pop(idx)
 
-    batch_metadata = []
-    for i, result in enumerate(results):
-        detected_objects = []
-        for detection in result.boxes:
-            x1, y1, x2, y2 = map(int, detection.xyxy[0])  # Bounding box
-            confidence = float(detection.conf[0])  # Confidence score
+        if not batch_images:
+            continue
 
-            # Apply confidence threshold
-            if confidence < confidence_threshold:
-                continue
+        # Perform inference on the batch
+        batch_results = model(batch_images)
 
-            detected_objects.append({
-                "bbox": [x1, y1, x2, y2],
-                "confidence": confidence
+        for img_path, result in zip(batch_paths, batch_results):
+            if save_annotated or plt_annotated:
+                annotated_img = result.plot()
+
+                if save_annotated and results_folder:
+                    base_name = os.path.basename(img_path)
+                    save_path = os.path.join(results_folder, f"annotated_{base_name}")
+                    cv2.imwrite(save_path, annotated_img)
+                    logging.info(f"Annotated image saved to: {save_path}")
+
+                if plt_annotated:
+                    import matplotlib.pyplot as plt
+                    plt.imshow(cv2.cvtColor(annotated_img, cv2.COLOR_BGR2RGB))
+                    plt.title(f"Annotated {os.path.basename(img_path)}")
+                    plt.axis('off')
+                    plt.show()
+
+            results.append({
+                'image_path': img_path,
+                'detections': result.boxes.data.cpu().numpy().tolist()
             })
 
-        # Apply Non-Maximum Suppression (NMS) to remove duplicate overlapping boxes
-        filtered_objects = apply_nms(detected_objects, overlap_threshold)
+        if mode == 'studs':
+            # Extract stud bounding boxes from the result
+            studs = result.boxes.data.cpu().numpy().tolist()
 
-        # Prepare metadata for the current image
-        metadata = {
-            "image_path": image_paths[i],
-            "mode": mode,
-            "detections": len(filtered_objects),
-            "objects": filtered_objects,
-            "confidence_threshold": confidence_threshold,
-            "overlap_threshold": overlap_threshold
-        }
-        batch_metadata.append(metadata)
+            # Classify brick dimension based on detected studs
+            brick_dimension = classify_brick_from_studs(
+                studs=studs,
+                image=annotated_img if save_annotated or plt_annotated else image,
+                working_folder=results_folder,
+                save_annotated=save_annotated,
+                plt_annotated=plt_annotated
+            )
 
-    return batch_metadata
+            results.append({
+                'image_path': img_path,
+                'detections': studs,
+                'brick_dimension': brick_dimension
+            })
+        else:
+            results.append({
+                'image_path': img_path,
+                'detections': result.boxes.data.cpu().numpy().tolist()
+            })
+
+    return results
 
 STUD_TO_DIMENSION_MAP = {
     1: "1x1",
@@ -192,6 +213,85 @@ def classify_brick(brick_image, model_studs, confidence_threshold=0.5):
             return possible_dimensions[0]  # Likely a square brick (e.g., "2x2")
 
     return possible_dimensions
+
+def classify_brick_from_studs(studs, image, working_folder, save_annotated=False, plt_annotated=False):
+    """
+    Classifies the brick dimension based on detected stud positions.
+
+    Args:
+        studs (list): List of tuples representing stud bounding boxes (x_min, y_min, x_max, y_max).
+        image (numpy.ndarray): The original image containing the detected studs.
+        working_folder (str): Directory to save annotated images.
+        save_annotated (bool): Flag to save annotated images.
+        plt_annotated (bool): Flag to display annotated images.
+
+    Returns:
+        str: Classified brick dimension or an error message.
+    """
+    if len(studs) == 0:
+        print("[INFO] No studs detected. Returning 'Unknown'.")
+        return "Unknown"
+
+    # Validate number of studs
+    num_studs = len(studs)
+    valid_stud_counts = STUD_TO_DIMENSION_MAP.keys()
+    if num_studs not in valid_stud_counts:
+        print(f"[ERROR] Deviant number of studs detected ({num_studs}). Returning 'Error'.")
+        return "Deviant number of studs. Definitely bad inference. Sorry."
+
+    # Extract stud center coordinates
+    centers = [((x1 + x2) / 2, (y1 + y2) / 2) for x1, y1, x2, y2 in studs]
+
+    # Mean bounding box size for spacing calculation
+    box_sizes = [((x_max - x_min + y_max - y_min) / 2) for x_min, y_min, x_max, y_max in studs]
+
+    # Fit a regression line using least squares
+    xs, ys = zip(*centers)
+    m, b = np.polyfit(xs, ys, 1)  # Linear regression (y = mx + b)
+
+    # Compute deviation from the line
+    deviations = [abs(y - (m * x + b)) for x, y in centers]
+
+    # Decision: Nx1 or Nx2
+    threshold = np.mean(box_sizes) / 2
+    classification_aux = "Nx1" if max(deviations) < threshold else "Nx2"
+
+    # Determine final brick dimension
+    possible_dimensions = STUD_TO_DIMENSION_MAP.get(num_studs, "Unknown")
+
+    if isinstance(possible_dimensions, list):  # If there is ambiguity
+        final_dimension = possible_dimensions[0] if classification_aux == "Nx2" else possible_dimensions[1]
+    else:
+        final_dimension = possible_dimensions
+
+    # Visualization
+    if save_annotated or plt_annotated:
+        plt.figure(figsize=(6, 6), facecolor='black')
+        plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+
+        # Plot studs
+        for x, y in centers:
+            plt.scatter(x, y, color='red', s=40)
+
+        # Plot regression line
+        x_line = np.array([min(xs), max(xs)])
+        y_line = m * x_line + b
+        plt.plot(x_line, y_line, color='cyan', linestyle='dashed')
+
+        # Display classification decision
+        plt.text(10, 30, f"Classification: {final_dimension}", fontsize=14, color='white',
+                 bbox=dict(facecolor='black', alpha=0.7))
+
+        plt.axis('off')
+        if save_annotated:
+            os.makedirs(working_folder, exist_ok=True)
+            save_path = os.path.join(working_folder, "classification_result.png")
+            plt.savefig(save_path, bbox_inches='tight')
+            print(f"[INFO] Annotated image saved to: {save_path}")
+        if plt_annotated:
+            plt.show()
+
+    return final_dimension
 
 def detect_and_classify(image_paths, model_bricks, model_studs, confidence_threshold=0.5, overlap_threshold=0.5):
     """
@@ -498,35 +598,52 @@ def zip_results(results_folder, output_path=None):
 
 def main():
     """
-    Main function to process and brand images for portfolio presentation.
+    Main execution function for model inference.
     """
-    parser = argparse.ArgumentParser(description="LEGO Brick Branding Processor")
-    parser.add_argument("--source", type=str, required=True, help="Path to an image or a directory of images")
-    parser.add_argument("--mode", type=str, choices=["bricks", "studs", "classify"], required=True, help="Processing mode")
-    parser.add_argument("--destination", type=str, default=os.getcwd(), help="Destination folder to save processed images")
-    parser.add_argument("--grid-dimensions", type=int, nargs=2, metavar=('rows', 'cols'), default=(2, 2), help="Grid dimensions for multiple images (rows cols)")
+    parser = argparse.ArgumentParser(description="LEGO Brick Classification & Detection")
+    parser.add_argument("--images", type=str, nargs='+', required=True, help="Paths to the input images")
+    parser.add_argument("--mode", type=str, choices=["bricks", "studs", "classify"], required=True, help="Select mode: 'bricks', 'studs', or 'classify'")
+    parser.add_argument("--batch-size", type=int, default=8, help="Number of images to process in a batch")
+    parser.add_argument("--save-annotated", action="store_true", help="Save annotated images")
+    parser.add_argument("--plt-annotated", action="store_true", help="Display annotated images")
+    parser.add_argument("--export-results", action="store_true", help="Export results as a zip file to execution directory")
 
     args = parser.parse_args()
 
-    logging.info("🚀 Starting the branding process...")
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        handlers=[logging.StreamHandler()]
+    )
 
-    # Ensure the destination directory exists
-    os.makedirs(args.destination, exist_ok=True)
+    logging.info("🚀 Starting LEGO Brick Inference...")
 
-    if os.path.isfile(args.source):
-        # Process a single image
-        detections = predict(args.source, args.mode)
-        save_annotated_image(args.source, detections, destination_folder=args.destination)
-    elif os.path.isdir(args.source):
-        # Process a directory of images
-        image_files = [os.path.join(args.source, f) for f in os.listdir(args.source) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
-        selected_images = random.sample(image_files, min(len(image_files), args.grid_dimensions[0] * args.grid_dimensions[1]))
-        detections_dict = {img: predict(img, args.mode) for img in selected_images}
-        visualize_grid(selected_images, detections_dict, args.mode, args.grid_dimensions, args.destination)
-    else:
-        logging.error("Invalid source path provided. Please provide a valid image file or directory.")
+    # Load the model
+    model = load_model(args.mode)
 
-    logging.info("✅ Branding process completed.")
+    # Create results folder inside cache
+    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    results_folder = os.path.join("cache/results", f"{args.mode}_{timestamp}")
+    os.makedirs(results_folder, exist_ok=True)
+
+    # Run inference
+    results = predict(
+        image_paths=args.images,
+        model=model,
+        mode=args.mode,
+        batch_size=args.batch_size,
+        save_annotated=args.save_annotated,
+        plt_annotated=args.plt_annotated,
+        results_folder=results_folder
+    )
+
+    # Print results
+    logging.info("✅ Inference complete.")
+    logging.info(json.dumps(results, indent=4))
+
+    # Zip results if requested
+    if args.export_results:
+        zip_results(results_folder)
 
 if __name__ == "__main__":
     main()
