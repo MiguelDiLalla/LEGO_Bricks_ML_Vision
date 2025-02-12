@@ -391,7 +391,7 @@ def augment_data(dataset_path, augmentations=2):
             shutil.copy(label_path, aug_label_name)
 
     logging.info(f"✅ Data augmentation completed with {augmentations} augmentations per image.")
-    
+
 # slecting the model to train
 def select_model(mode, use_pretrained=False):
     """
@@ -435,13 +435,13 @@ def train_model(dataset_path, model_path, device, epochs, batch_size, output_dir
     command = [
         "yolo",
         "train",
-        f"--data={dataset_path}",
-        f"--epochs={epochs}",
-        f"--batch={batch_size}",
-        f"--device={device}",
-        f"--project={output_dir}",
-        f"--name={training_name}",
-        "--exist-ok"
+        f"data={dataset_path}",
+        f"epochs={epochs}",
+        f"batch={batch_size}",
+        f"device={device}",
+        f"project={output_dir}",
+        f"name={training_name}",
+        "exist_ok=True"  # ✅ Corrected syntax
     ]
     
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
@@ -544,7 +544,7 @@ def main():
     output_dir = get_repo_root()  # Store training results in the working directory
     train_model(dataset_yolo_path, model_path, device, args.epochs, args.batch_size, output_dir)
     
-    exported_logs = export_logs()
+    exported_logs = export_logs(log_file="train_session.log")
     
     if args.zip_results:
         zip_training_results(output_dir, output_dir)
