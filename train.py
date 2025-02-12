@@ -181,22 +181,50 @@ def unzip_dataset(mode, force_extract=False):
 
 def validate_dataset(mode):
     """
-    Validates dataset integrity by checking image-label parity and file integrity.
+    Validates dataset integrity by dynamically detecting the images and labels folders,
+    ensuring image-label parity and file integrity.
 
     Args:
         mode (str): 'bricks' or 'studs', defining dataset location.
     """
     repo_root = get_repo_root()
     dataset_path = os.path.join(repo_root, "cache/datasets", mode)
-    images_path = os.path.join(dataset_path, "images")
-    labels_path = os.path.join(dataset_path, "labels")
 
-    if not os.path.exists(images_path) or not os.path.exists(labels_path):
-        logging.error(f"Missing required dataset folders in {dataset_path}.")
-        raise FileNotFoundError(f"Missing dataset directories: {images_path} or {labels_path}")
+    # Detect folders
+    subfolders = [os.path.join(dataset_path, d) for d in os.listdir(dataset_path) if os.path.isdir(os.path.join(dataset_path, d))]
 
-    image_files = sorted([f for f in os.listdir(images_path) if f.endswith(".jpg")])
-    label_files = sorted([f for f in os.listdir(labels_path) if f.endswith(".txt")])
+    # Identify images and labels based on dominant file extensions
+    images_path, labels_path = None, None
+    for folder in subfolders:
+        files = os.listdir(folder)
+        jpg_count = sum(f.endswith('.jpg') for f in files)
+        txt_count = sum(f.endswith('.txt') for f in files)
+
+        if jpg_count > txt_count:
+            images_path = folder
+        elif txt_count > jpg_count:
+            labels_path = folder
+
+    # If paths are missing, raise an error
+    if images_path is None or labels_path is None:
+        logging.error(f"Dataset structure invalid. Could not identify images and labels in {dataset_path}.")
+        raise FileNotFoundError(f"Could not determine image/label folders in: {dataset_path}")
+
+    # Rename folders to standard structure if needed
+    expected_images_path = os.path.join(dataset_path, "images")
+    expected_labels_path = os.path.join(dataset_path, "labels")
+
+    if images_path != expected_images_path:
+        os.rename(images_path, expected_images_path)
+        logging.info(f"Renamed {images_path} -> {expected_images_path}")
+
+    if labels_path != expected_labels_path:
+        os.rename(labels_path, expected_labels_path)
+        logging.info(f"Renamed {labels_path} -> {expected_labels_path}")
+
+    # Validate dataset integrity
+    image_files = sorted([f for f in os.listdir(expected_images_path) if f.endswith(".jpg")])
+    label_files = sorted([f for f in os.listdir(expected_labels_path) if f.endswith(".txt")])
 
     if len(image_files) != len(label_files):
         logging.error("Mismatch between number of images and labels.")
