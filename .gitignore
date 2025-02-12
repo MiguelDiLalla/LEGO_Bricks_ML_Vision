@@ -44,3 +44,13 @@ tests/
 
 # ✅ Ensure necessary execution structure remains intact
 !results/TrainingSessions/.gitkeep
+
+
+# ✅ Ignore .ps1 files
+*.ps1
+
+# ✅ Ignore kaggle.json
+kaggle.json
+
+# ✅ Ignore FolderStructure.txt
+FolderStructure.txt
