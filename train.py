@@ -361,8 +361,7 @@ def augment_data(dataset_path, augmentations=2):
         A.RandomBrightnessContrast(p=0.2),
         A.Rotate(limit=15, p=0.5),
         A.GaussianBlur(p=0.2),
-        A.ColorJitter(p=0.2),
-        ToTensorV2()
+        A.ColorJitter(p=0.2)
     ])
 
     for img_file in os.listdir(train_images_path):
@@ -372,20 +371,27 @@ def augment_data(dataset_path, augmentations=2):
         img_path = os.path.join(train_images_path, img_file)
         label_path = os.path.join(train_labels_path, img_file.replace(".jpg", ".txt"))
 
+        # Read and Convert Image
         image = cv2.imread(img_path)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         for i in range(augmentations):
             augmented = augmentation_pipeline(image=image)["image"]
+
+            # ✅ Convert PyTorch Tensor to NumPy if needed
+            if isinstance(augmented, torch.Tensor):
+                augmented = augmented.permute(1, 2, 0).cpu().numpy()  # Convert (C,H,W) to (H,W,C)
+                augmented = (augmented * 255).astype(np.uint8)  # Convert to 8-bit format
+
             aug_img_name = img_file.replace(".jpg", f"_aug{i}.jpg")
             aug_img_path = os.path.join(train_images_path, aug_img_name)
-            cv2.imwrite(aug_img_path, augmented)
+            cv2.imwrite(aug_img_path, cv2.cvtColor(augmented, cv2.COLOR_RGB2BGR))  # Convert back to BGR
 
             aug_label_name = label_path.replace(".txt", f"_aug{i}.txt")
             shutil.copy(label_path, aug_label_name)
 
     logging.info(f"✅ Data augmentation completed with {augmentations} augmentations per image.")
-
+    
 # slecting the model to train
 def select_model(mode, use_pretrained=False):
     """
@@ -548,6 +554,6 @@ def main():
     
     logging.info("✅ Training pipeline completed successfully.")
 
-    
+
 if __name__ == "__main__":
     main()
