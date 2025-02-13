@@ -13,6 +13,7 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 import yaml
 from ultralytics import YOLO
+from pathlib import Path
 
 
 #all imports
@@ -37,39 +38,38 @@ def setup_logging(log_name="train_session"):
 
 def cleanup_after_training(dataset_path, dataset_yolo_path):
     """
-    Cleans up temporary data after training, keeping only final results.
+    Cleans up temporary data after training.
     """
     logging.info("🧹 Cleaning up temporary files...")
-
     # Remove extracted dataset
-    if os.path.exists(dataset_path):
+    if Path(dataset_path).exists():
         shutil.rmtree(dataset_path)
-        logging.info(f"Deleted extracted dataset: {dataset_path}")
+        logging.info(f"Deleted dataset from: {dataset_path}")
 
     # Remove augmented images
-    train_images_path = os.path.join(dataset_yolo_path, "dataset/images/train")
-    for img_file in os.listdir(train_images_path):
-        if "_aug" in img_file and img_file.endswith(".jpg"):
-            os.remove(os.path.join(train_images_path, img_file))
-    logging.info(f"Deleted augmented images from: {train_images_path}")
+    train_images_path = Path(dataset_yolo_path) / "dataset" / "images" / "train"
+    if train_images_path.exists():
+        for img_file in train_images_path.iterdir():
+            if img_file.suffix in [".jpg", ".png"]:
+                img_file.unlink()
+        logging.info(f"Deleted augmented images from: {train_images_path}")
 
     # Remove intermediate YOLO artifacts
-    yolo_cache_path = os.path.join(dataset_yolo_path, "dataset")
-    if os.path.exists(yolo_cache_path):
+    yolo_cache_path = Path(dataset_yolo_path) / "dataset"
+    if yolo_cache_path.exists():
         shutil.rmtree(yolo_cache_path)
-        logging.info(f"Deleted YOLO training artifacts: {yolo_cache_path}")
-
     logging.info("✅ Cleanup complete.")
 
 
-def get_repo_root():
+def get_repo_root() -> Path:
     """
     Auto-detects the repository root directory.
     """
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    while current_dir != "/" and not os.path.exists(os.path.join(current_dir, ".git")):
-        current_dir = os.path.dirname(current_dir)
-    return current_dir if os.path.exists(os.path.join(current_dir, ".git")) else os.getcwd()
+    current_dir = Path(__file__).resolve().parent
+    for parent in [current_dir] + list(current_dir.parents):
+        if (parent / ".git").exists():
+            return parent
+    return Path.cwd()
 
 def detect_hardware():
     """
@@ -137,14 +137,13 @@ def setup_execution_structure():
     """
     repo_root = get_repo_root()
     required_dirs = [
-        "cache/datasets",
-        "cache/models",
-        "cache/logs",
-        "cache/results/TrainingSessions",
+        repo_root / "cache" / "datasets",
+        repo_root / "cache" / "models",
+        repo_root / "cache" / "logs",
+        repo_root / "cache" / "results" / "TrainingSessions",
     ]
     for directory in required_dirs:
-        full_path = os.path.join(repo_root, directory)
-        os.makedirs(full_path, exist_ok=True)
+        directory.mkdir(parents=True, exist_ok=True)
     logging.info("✅ Execution structure initialized.")
 
 # Dataset download function
@@ -240,23 +239,21 @@ def validate_dataset(mode):
 # create dataset folder tree structure
 def create_dataset_structure(mode):
     """
-    Creates necessary dataset directories but does not handle splitting.
+    Creates necessary dataset directories for YOLO.
     """
     repo_root = get_repo_root()
-    output_dir = os.path.join(repo_root, "cache/datasets", f"{mode}_yolo")
-
+    output_dir = repo_root / "cache" / "datasets" / f"{mode}_yolo"
     yolo_dirs = [
-        "dataset/images/train",
-        "dataset/images/val",
-        "dataset/images/test",
-        "dataset/labels/train",
-        "dataset/labels/val",
-        "dataset/labels/test"
+        output_dir / "dataset" / "images" / "train",
+        output_dir / "dataset" / "images" / "val",
+        output_dir / "dataset" / "images" / "test",
+        output_dir / "dataset" / "labels" / "train",
+        output_dir / "dataset" / "labels" / "val",
+        output_dir / "dataset" / "labels" / "test"
     ]
     
     for yolo_dir in yolo_dirs:
-        os.makedirs(os.path.join(output_dir, yolo_dir), exist_ok=True)
-
+        yolo_dir.mkdir(parents=True, exist_ok=True)
     logging.info(f"✅ Dataset structure created at {output_dir}")
     return output_dir
 
