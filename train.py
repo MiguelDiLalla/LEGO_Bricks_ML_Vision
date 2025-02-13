@@ -555,15 +555,11 @@ def main():
     output_dir = get_repo_root()  # Store training results in the working directory
     train_model(dataset_yolo_path, model_path, device, args.epochs, args.batch_size, output_dir)
     
-    export_logs(log_file="train_session.log")  # ✅ Pass correct argument name
-    
     if args.zip_results:
         zip_training_results(output_dir, output_dir)
     
-    # ✅ Ensure logs are exported after training
+    # Export logs once with correct parameter name
     export_logs(log_name="train_session")
-
-    logging.info(f"Training results saved in: {training_results_path}")
 
     if args.cleanup:
         cleanup_after_training(dataset_path, dataset_yolo_path)
