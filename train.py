@@ -466,7 +466,7 @@ def train_model(dataset_path, model_path, device, epochs, batch_size, output_dir
 
 def zip_training_results(training_dir):
     """
-    Compresses training results into a zip file for easy retrieval.
+    Compresses training results into a zip file for easy retrieval and logs a download link.
     """
     zip_filename = f"{training_dir}.zip"
     with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
@@ -474,7 +474,10 @@ def zip_training_results(training_dir):
             for file in files:
                 file_path = os.path.join(root, file)
                 zipf.write(file_path, os.path.relpath(file_path, training_dir))
+    abs_zip_path = os.path.abspath(zip_filename)
+    download_link = f"file://{abs_zip_path}"
     logging.info(f"✅ Training results compressed into: {zip_filename}")
+    logging.info(f"Download link: {download_link}")
     return zip_filename
 
 # Export logs
