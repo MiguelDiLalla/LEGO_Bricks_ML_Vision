@@ -482,14 +482,18 @@ def zip_training_results(training_dir):
 def export_logs(log_file, output_format="json"):
     """
     Exports logs in JSON or TXT format for easy debugging.
+
+    Args:
+        log_file (str): The name of the log file to export.
+        output_format (str): Format to save logs (default: JSON).
     """
     log_path = os.path.join("logs", log_file)
     if not os.path.exists(log_path):
-        logging.error("❌ Log file not found.")
+        logging.error(f"❌ Log file not found: {log_path}")
         return None
-    
+
     export_path = log_path.replace(".log", f".{output_format}")
-    
+
     if output_format == "json":
         with open(log_path, "r") as f:
             log_entries = [line.strip() for line in f.readlines()]
@@ -497,10 +501,9 @@ def export_logs(log_file, output_format="json"):
             json.dump(log_entries, f, indent=4)
     else:
         shutil.copy(log_path, export_path)
-    
+
     logging.info(f"✅ Logs exported to {export_path}")
     return export_path
-
 # Parse command-line arguments
 def parse_args():
     """
