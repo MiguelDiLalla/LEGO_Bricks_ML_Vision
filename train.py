@@ -479,15 +479,15 @@ def zip_training_results(training_dir):
 
 # Export logs
 
-def export_logs(log_file, output_format="json"):
+def export_logs(log_name="train_session", output_format="json"):
     """
     Exports logs in JSON or TXT format for easy debugging.
 
     Args:
-        log_file (str): The name of the log file to export.
+        log_name (str): The base name for the log file (without extension).
         output_format (str): Format to save logs (default: JSON).
     """
-    log_path = os.path.join("logs", log_file)
+    log_path = os.path.join("logs", f"{log_name}.log")
     if not os.path.exists(log_path):
         logging.error(f"❌ Log file not found: {log_path}")
         return None
