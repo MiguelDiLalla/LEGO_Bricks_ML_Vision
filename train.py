@@ -478,6 +478,7 @@ def zip_training_results(training_dir):
     download_link = f"file://{abs_zip_path}"
     logging.info(f"✅ Training results compressed into: {zip_filename}")
     logging.info(f"Download link: {download_link}")
+    print(f"\nDownload link for results: {download_link}\n")
     return zip_filename
 
 # Export logs
@@ -518,7 +519,9 @@ def parse_args():
     parser.add_argument("--mode", type=str, choices=["bricks", "studs"], required=True, help="Training mode: 'bricks' or 'studs'")
     parser.add_argument("--epochs", type=int, default=20, help="Number of training epochs")
     parser.add_argument("--batch-size", type=int, default=16, help="Batch size for training")
-    parser.add_argument("--zip-results", action="store_true", help="Compress training results after completion")
+    # By default, zip_results is enabled. Users can disable it by using --no-zip-results.
+    parser.add_argument("--zip-results", dest="zip_results", action="store_true", default=True, help="Compress training results after completion (default: enabled)")
+    parser.add_argument("--no-zip-results", dest="zip_results", action="store_false", help="Disable compressing training results")
     parser.add_argument("--cleanup", action="store_true", help="Remove cached datasets after training")
     parser.add_argument("--force-extract", action="store_true", help="Force re-extraction of dataset")
     parser.add_argument("--use-pretrained", action="store_true", help="Use LEGO-trained model instead of YOLOv8n")
