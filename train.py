@@ -559,7 +559,8 @@ def main():
     model_path = select_model(args.mode, args.use_pretrained)
     logging.info(f"Using model: {model_path}")
     
-    output_dir = get_repo_root()  # Store training results in the working directory
+    output_dir = os.path.join(get_repo_root(), "cache", "results")
+    os.makedirs(output_dir, exist_ok=True)
     train_model(dataset_yolo_path, model_path, device, args.epochs, args.batch_size, output_dir)
     
     if args.zip_results:

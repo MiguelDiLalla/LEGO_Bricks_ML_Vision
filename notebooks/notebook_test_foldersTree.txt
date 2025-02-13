@@ -1,362 +1,44 @@
 📂 /
+📂 .virtual_documents/
 📂 LEGO_Bricks_ML_Vision/
-    📄 train.py
-    📄 gitkeep_creator.ps1
     📄 kaggle.json
+    📄 requirements.txt
+    📄 test_export_logs.py
     📄 apply_new_folder_tree.ps1
+    📄 GenerateStructure.ps1
+    📄 train.py
+    📄 .gitignore
+    📄 gitkeep_creator.ps1
     📄 cli.py
     📄 yolov8n.pt
-    📄 requirements.txt
-    📄 .gitignore
-    📄 GenerateStructure.ps1
-    📄 README.md
-    📄 test_export_logs.py
-    📄 yolo11n.pt
-    📄 FolderStructure.txt
     📄 LICENSE
+    📄 FolderStructure.txt
     📄 ReorganizeProject.ps1
-    📂 docs/
-        📄 LEGO_Bricks_Project_Miguel_Di_Lalla.md
-        📄 LEGO_Bricks_Identification_Project_Technical_Report.pdf
-        📄 App_Initial_prompt.md
-        📄 train_py_func_dependencies_map.png
-        📄 LEGO_Bricks_Identification_Project_Overview.pdf
-        📄 Refurbishing_Project_doc.pdf
-        📄 train_py_refactoring.md
-        📄 Rewind_latex_doc.pdf
-        📄 Refurbishing_Project_doc_withCODE.pdf
-    📂 tests/
-        📄 path_references.json
-    📂 models/
-        📂 checkpoints/
-            📄 yolov8n.pt
-            📄 Brick_Model_best20250123_192838t.pt
-            📄 Stud_Model_best20250124_170824.pt
-            📂 Legacy_Models/
-                📄 YOLO_LegoBrick_Detectron_v0.pt
-                📄 YOLOdetectron_LegoBrick_yolov8n_20241029_175720.pt
-                📄 Stud_Model_best20250124_165222.pt
-                📄 YOLOdetectron_Stud_yolov8n_20241030_151507.pt
-    📂 logs/
-        📄 cli.log
-        📄 train_session.log
-    📂 configs/
-        📄 dataset.yaml
-        📄 training.json
+    📄 README.md
+    📄 yolo11n.pt
     📂 docker/
         📂 Train_Github_version/
-            📄 Dockerfile.txt
+            📄 Train_cli.py
             📄 requirements.txt
             📄 Dockerfile
-            📄 Train_models_docker.py
-            📄 Train_cli.py
             📄 CHANGELOG.md
+            📄 Dockerfile.txt
+            📄 Train_models_docker.py
         📂 Utils_github_version/
             📄 Utils_LEGO_docker.py
+    📂 logs/
+        📄 train_session.json
+        📄 cli.log
+        📄 train_session.log
     📂 utils/
-        📄 data_utils.py
         📄 model_utils.py
-    📂 results/
-        📄 training_results.zip
-        📂 training_20250213_154645/
-            📄 events.out.tfevents.1739461633.5d6eb97c29fa.103.0
-            📄 val_batch2_pred.jpg
-            📄 val_batch1_labels.jpg
-            📄 val_batch1_pred.jpg
-            📄 train_batch0.jpg
-            📄 train_batch1.jpg
-            📄 labels_correlogram.jpg
-            📄 val_batch0_labels.jpg
-            📄 train_batch2.jpg
-            📄 labels.jpg
-            📄 val_batch2_labels.jpg
-            📄 args.yaml
-            📄 val_batch0_pred.jpg
-            📂 weights/
-    📂 LEGO_Bricks_ML_Vision/
-        📄 train.py
-        📄 gitkeep_creator.ps1
-        📄 kaggle.json
-        📄 apply_new_folder_tree.ps1
-        📄 cli.py
-        📄 yolov8n.pt
-        📄 requirements.txt
-        📄 .gitignore
-        📄 training_results.zip
-        📄 GenerateStructure.ps1
-        📄 README.md
-        📄 test_export_logs.py
-        📄 yolo11n.pt
-        📄 FolderStructure.txt
-        📄 LICENSE
-        📄 ReorganizeProject.ps1
-        📂 docs/
-            📄 LEGO_Bricks_Project_Miguel_Di_Lalla.md
-            📄 LEGO_Bricks_Identification_Project_Technical_Report.pdf
-            📄 App_Initial_prompt.md
-            📄 train_py_func_dependencies_map.png
-            📄 LEGO_Bricks_Identification_Project_Overview.pdf
-            📄 Refurbishing_Project_doc.pdf
-            📄 train_py_refactoring.md
-            📄 Rewind_latex_doc.pdf
-            📄 Refurbishing_Project_doc_withCODE.pdf
-        📂 tests/
-            📄 path_references.json
-        📂 models/
-            📂 checkpoints/
-                📄 yolov8n.pt
-                📄 Brick_Model_best20250123_192838t.pt
-                📄 Stud_Model_best20250124_170824.pt
-                📂 Legacy_Models/
-                    📄 YOLO_LegoBrick_Detectron_v0.pt
-                    📄 YOLOdetectron_LegoBrick_yolov8n_20241029_175720.pt
-                    📄 Stud_Model_best20250124_165222.pt
-                    📄 YOLOdetectron_Stud_yolov8n_20241030_151507.pt
-        📂 logs/
-            📄 train_session.json
-            📄 cli.log
-            📄 train_session.log
-        📂 configs/
-            📄 dataset.yaml
-            📄 training.json
-        📂 docker/
-            📂 Train_Github_version/
-                📄 Dockerfile.txt
-                📄 requirements.txt
-                📄 Dockerfile
-                📄 Train_models_docker.py
-                📄 Train_cli.py
-                📄 CHANGELOG.md
-            📂 Utils_github_version/
-                📄 Utils_LEGO_docker.py
-        📂 utils/
-            📄 data_utils.py
-            📄 model_utils.py
-        📂 results/
-            📂 training_20250213_154924/
-                📄 val_batch2_pred.jpg
-                📄 val_batch1_labels.jpg
-                📄 val_batch1_pred.jpg
-                📄 R_curve.png
-                📄 train_batch0.jpg
-                📄 events.out.tfevents.1739461779.5d6eb97c29fa.253.0
-                📄 PR_curve.png
-                📄 train_batch1.jpg
-                📄 labels_correlogram.jpg
-                📄 val_batch0_labels.jpg
-                📄 results.png
-                📄 train_batch2.jpg
-                📄 confusion_matrix.png
-                📄 results.csv
-                📄 labels.jpg
-                📄 val_batch2_labels.jpg
-                📄 P_curve.png
-                📄 args.yaml
-                📄 confusion_matrix_normalized.png
-                📄 val_batch0_pred.jpg
-                📄 F1_curve.png
-                📂 weights/
-                    📄 last.pt
-                    📄 best.pt
-        📂 .git/
-            📄 description
-            📄 index
-            📄 HEAD
-            📄 packed-refs
-            📄 config
-            📂 info/
-                📄 exclude
-            📂 logs/
-                📄 HEAD
-                📂 refs/
-                    📂 heads/
-                        📄 main
-                    📂 remotes/
-                        📂 origin/
-                            📄 HEAD
-            📂 objects/
-                📂 info/
-                📂 pack/
-                    📄 pack-7a0d3beef484d1cdd6e9a1ca42981141387db4f6.idx
-                    📄 pack-7a0d3beef484d1cdd6e9a1ca42981141387db4f6.pack
-            📂 refs/
-                📂 heads/
-                    📄 main
-                📂 remotes/
-                    📂 origin/
-                        📄 HEAD
-                📂 tags/
-            📂 hooks/
-                📄 pre-commit.sample
-                📄 commit-msg.sample
-                📄 pre-rebase.sample
-                📄 update.sample
-                📄 prepare-commit-msg.sample
-                📄 pre-push.sample
-                📄 applypatch-msg.sample
-                📄 fsmonitor-watchman.sample
-                📄 pre-receive.sample
-                📄 push-to-checkout.sample
-                📄 pre-merge-commit.sample
-                📄 post-update.sample
-                📄 pre-applypatch.sample
-            📂 branches/
-        📂 scripts/
-            📄 pipeline_train.py
-            📄 pipeline_utils.py
-            📄 pipeline_setup.py
-            📂 Legacy_scripts/
-                📄 pipeline_train.py
-                📄 Generate_folders_ImageDataProject.py
-                📄 pipeline.py
-                📄 pipeline_utils.py
-                📄 setup.py
-                📄 cli.py
-                📄 __init__.py
-                📄 pipeline_inference_part1.py
-                📄 organize_files_script.py
-                📄 pipeline_report_viz.py
-                📄 Dockerfile
-                📄 visualize_presentation.py
-                📄 pyproject.toml
-                📄 PyPl_publish.py
-                📄 pipeline_setup.py
-        📂 presentation/
-            📂 Datasets_Compress/
-                📄 LegoBricks_Dataset.zip
-                📄 BrickStuds_Dataset.zip
-            📂 Models_DEMO/
-                📄 Brick_Model_best20250123_192838t.pt
-                📄 Stud_Model_best20250124_170824.pt
-        📂 notebooks/
-            📄 Technical_Report.md
-            📄 tree_structure.txt
-            📄 yolov8n.pt
-            📄 LEGO_MachineVision_refactorTest.ipynb
-            📄 LEGO_Bricks_Project_Miguel_Di_Lalla.ipynb
-            📄 TrainTest.ipynb
-            📄 LEGO_Bricks_Identification_Project_Technical_Report.ipynb
-            📄 Technical_Report.ipynb
-            📄 LEGO_Bricks_Identification_Project_Overview.ipynb
-            📄 Utilities_dev.ipynb
-        📂 cache/
-            📂 models/
-            📂 logs/
-            📂 datasets/
-                📂 bricks/
-                    📂 labels/
-                        📄 image_1546.txt
-                        📄 image_52.txt
-                        📄 image_1624.txt
-                        📄 image_1504.txt
-                        📄 image_968.txt
-                        📄 [...]
-                        📄 image_1498.txt
-                        📄 image_481.txt
-                        📄 image_205.txt
-                        📄 image_939.txt
-                        📄 image_1496.txt
-                    📂 images/
-                        📄 image_963.jpg
-                        📄 image_1544.jpg
-                        📄 image_1354.jpg
-                        📄 image_1661.jpg
-                        📄 image_190.jpg
-                        📄 [...]
-                        📄 image_1820.jpg
-                        📄 image_1815.jpg
-                        📄 image_771.jpg
-                        📄 image_322.jpg
-                        📄 image_929.jpg
-                📂 bricks_yolo/
-                    📄 dataset.yaml
-                    📂 dataset/
-                        📂 labels/
-                            📄 train.cache
-                            📄 val.cache
-                            📂 test/
-                                📄 image_1546.txt
-                                📄 image_1382.txt
-                                📄 image_644.txt
-                                📄 image_1265.txt
-                                📄 image_1976.txt
-                                📄 [...]
-                                📄 image_187.txt
-                                📄 image_161.txt
-                                📄 image_1759.txt
-                                📄 image_1606.txt
-                                📄 image_481.txt
-                            📂 train/
-                                📄 image_52.txt
-                                📄 image_285_aug1.txt
-                                📄 image_372_aug1.txt
-                                📄 image_1324_aug0.txt
-                                📄 image_825_aug1.txt
-                                📄 [...]
-                                📄 image_605_aug0.txt
-                                📄 image_866.txt
-                                📄 image_1498.txt
-                                📄 image_205.txt
-                                📄 image_1496.txt
-                            📂 val/
-                                📄 image_1624.txt
-                                📄 image_968.txt
-                                📄 image_1420.txt
-                                📄 image_810.txt
-                                📄 image_1562.txt
-                                📄 [...]
-                                📄 image_838.txt
-                                📄 image_1876.txt
-                                📄 image_1067.txt
-                                📄 image_1392.txt
-                                📄 image_939.txt
-                        📂 images/
-                            📂 test/
-                                📄 image_1449.jpg
-                                📄 image_358.jpg
-                                📄 image_380.jpg
-                                📄 image_741.jpg
-                                📄 image_906.jpg
-                                📄 [...]
-                                📄 image_1093.jpg
-                                📄 image_1018.jpg
-                                📄 image_1192.jpg
-                                📄 image_1820.jpg
-                                📄 image_929.jpg
-                            📂 train/
-                                📄 image_459_aug0.jpg
-                                📄 image_963.jpg
-                                📄 image_1780_aug0.jpg
-                                📄 image_1354.jpg
-                                📄 image_1195_aug1.jpg
-                                📄 [...]
-                                📄 image_1543_aug0.jpg
-                                📄 image_1517_aug1.jpg
-                                📄 image_771.jpg
-                                📄 image_322.jpg
-                                📄 image_1080_aug0.jpg
-                            📂 val/
-                                📄 image_1544.jpg
-                                📄 image_190.jpg
-                                📄 image_357.jpg
-                                📄 image_945.jpg
-                                📄 image_684.jpg
-                                📄 [...]
-                                📄 image_123.jpg
-                                📄 image_1926.jpg
-                                📄 image_965.jpg
-                                📄 image_956.jpg
-                                📄 image_1703.jpg
-            📂 results/
-                📂 TrainingSessions/
+        📄 data_utils.py
     📂 .git/
+        📄 packed-refs
         📄 description
         📄 index
-        📄 HEAD
-        📄 packed-refs
         📄 config
-        📂 info/
-            📄 exclude
+        📄 HEAD
         📂 logs/
             📄 HEAD
             📂 refs/
@@ -366,10 +48,27 @@
                     📂 origin/
                         📄 HEAD
         📂 objects/
-            📂 info/
             📂 pack/
-                📄 pack-7a0d3beef484d1cdd6e9a1ca42981141387db4f6.idx
-                📄 pack-7a0d3beef484d1cdd6e9a1ca42981141387db4f6.pack
+                📄 pack-8df58a0360bc6013b39bf8db86fc17b8d5b3aa60.pack
+                📄 pack-8df58a0360bc6013b39bf8db86fc17b8d5b3aa60.idx
+            📂 info/
+        📂 branches/
+        📂 info/
+            📄 exclude
+        📂 hooks/
+            📄 pre-receive.sample
+            📄 update.sample
+            📄 pre-push.sample
+            📄 pre-merge-commit.sample
+            📄 fsmonitor-watchman.sample
+            📄 post-update.sample
+            📄 commit-msg.sample
+            📄 pre-commit.sample
+            📄 prepare-commit-msg.sample
+            📄 push-to-checkout.sample
+            📄 applypatch-msg.sample
+            📄 pre-applypatch.sample
+            📄 pre-rebase.sample
         📂 refs/
             📂 heads/
                 📄 main
@@ -377,167 +76,203 @@
                 📂 origin/
                     📄 HEAD
             📂 tags/
-        📂 hooks/
-            📄 pre-commit.sample
-            📄 commit-msg.sample
-            📄 pre-rebase.sample
-            📄 update.sample
-            📄 prepare-commit-msg.sample
-            📄 pre-push.sample
-            📄 applypatch-msg.sample
-            📄 fsmonitor-watchman.sample
-            📄 pre-receive.sample
-            📄 push-to-checkout.sample
-            📄 pre-merge-commit.sample
-            📄 post-update.sample
-            📄 pre-applypatch.sample
-        📂 branches/
+    📂 tests/
+        📄 path_references.json
     📂 scripts/
         📄 pipeline_train.py
         📄 pipeline_utils.py
         📄 pipeline_setup.py
         📂 Legacy_scripts/
+            📄 pipeline_inference_part1.py
             📄 pipeline_train.py
-            📄 Generate_folders_ImageDataProject.py
-            📄 pipeline.py
             📄 pipeline_utils.py
             📄 setup.py
-            📄 cli.py
+            📄 Dockerfile
             📄 __init__.py
-            📄 pipeline_inference_part1.py
+            📄 cli.py
+            📄 pipeline_setup.py
+            📄 pyproject.toml
+            📄 pipeline.py
+            📄 Generate_folders_ImageDataProject.py
             📄 organize_files_script.py
             📄 pipeline_report_viz.py
-            📄 Dockerfile
-            📄 visualize_presentation.py
-            📄 pyproject.toml
             📄 PyPl_publish.py
-            📄 pipeline_setup.py
-    📂 presentation/
-        📂 Datasets_Compress/
-            📄 LegoBricks_Dataset.zip
-            📄 BrickStuds_Dataset.zip
-        📂 Models_DEMO/
-            📄 Brick_Model_best20250123_192838t.pt
+            📄 visualize_presentation.py
+    📂 docs/
+        📄 Refurbishing_Project_doc.pdf
+        📄 Rewind_latex_doc.pdf
+        📄 LEGO_Bricks_Project_Miguel_Di_Lalla.md
+        📄 Refurbishing_Project_doc_withCODE.pdf
+        📄 train_py_func_dependencies_map.png
+        📄 train_py_refactoring.md
+        📄 LEGO_Bricks_Identification_Project_Technical_Report.pdf
+        📄 LEGO_Bricks_Identification_Project_Overview.pdf
+        📄 App_Initial_prompt.md
+    📂 models/
+        📂 checkpoints/
+            📄 yolov8n.pt
             📄 Stud_Model_best20250124_170824.pt
-    📂 notebooks/
-        📄 Technical_Report.md
-        📄 tree_structure.txt
-        📄 yolov8n.pt
-        📄 LEGO_MachineVision_refactorTest.ipynb
-        📄 LEGO_Bricks_Project_Miguel_Di_Lalla.ipynb
-        📄 TrainTest.ipynb
-        📄 LEGO_Bricks_Identification_Project_Technical_Report.ipynb
-        📄 Technical_Report.ipynb
-        📄 LEGO_Bricks_Identification_Project_Overview.ipynb
-        📄 Utilities_dev.ipynb
+            📄 Brick_Model_best20250123_192838t.pt
+            📂 Legacy_Models/
+                📄 YOLOdetectron_Stud_yolov8n_20241030_151507.pt
+                📄 Stud_Model_best20250124_165222.pt
+                📄 YOLO_LegoBrick_Detectron_v0.pt
+                📄 YOLOdetectron_LegoBrick_yolov8n_20241029_175720.pt
+    📂 results/
+        📂 training_20250213_171743/
+            📄 results.png
+            📄 confusion_matrix.png
+            📄 train_batch0.jpg
+            📄 val_batch2_labels.jpg
+            📄 PR_curve.png
+            📄 labels_correlogram.jpg
+            📄 P_curve.png
+            📄 val_batch1_pred.jpg
+            📄 events.out.tfevents.1739467092.de8bc998cb20.103.0
+            📄 args.yaml
+            📄 R_curve.png
+            📄 val_batch0_labels.jpg
+            📄 val_batch0_pred.jpg
+            📄 train_batch2.jpg
+            📄 labels.jpg
+            📄 confusion_matrix_normalized.png
+            📄 val_batch2_pred.jpg
+            📄 results.csv
+            📄 val_batch1_labels.jpg
+            📄 F1_curve.png
+            📄 train_batch1.jpg
+            📂 weights/
+                📄 best.pt
+                📄 last.pt
+    📂 configs/
+        📄 dataset.yaml
+        📄 training.json
     📂 cache/
-        📂 models/
         📂 logs/
         📂 datasets/
             📂 bricks/
                 📂 labels/
-                    📄 image_1546.txt
-                    📄 image_52.txt
-                    📄 image_1624.txt
-                    📄 image_1504.txt
-                    📄 image_968.txt
+                    📄 image_792.txt
+                    📄 image_1388.txt
+                    📄 image_1233.txt
+                    📄 image_1108.txt
+                    📄 image_1865.txt
                     📄 [...]
-                    📄 image_1498.txt
-                    📄 image_481.txt
-                    📄 image_205.txt
-                    📄 image_939.txt
-                    📄 image_1496.txt
+                    📄 image_684.txt
+                    📄 image_828.txt
+                    📄 image_615.txt
+                    📄 image_1285.txt
+                    📄 image_604.txt
                 📂 images/
-                    📄 image_963.jpg
-                    📄 image_1544.jpg
-                    📄 image_1354.jpg
-                    📄 image_1661.jpg
-                    📄 image_190.jpg
+                    📄 image_1921.jpg
+                    📄 image_792.jpg
+                    📄 image_53.jpg
+                    📄 image_205.jpg
+                    📄 image_417.jpg
                     📄 [...]
-                    📄 image_1820.jpg
-                    📄 image_1815.jpg
-                    📄 image_771.jpg
-                    📄 image_322.jpg
-                    📄 image_929.jpg
+                    📄 image_1160.jpg
+                    📄 image_1234.jpg
+                    📄 image_1644.jpg
+                    📄 image_821.jpg
+                    📄 image_1263.jpg
             📂 bricks_yolo/
                 📄 dataset.yaml
                 📂 dataset/
                     📂 labels/
-                        📄 train.cache
                         📄 val.cache
+                        📄 train.cache
                         📂 test/
-                            📄 image_1265.txt
-                            📄 image_1747.txt
-                            📄 image_1282.txt
-                            📄 image_138.txt
-                            📄 image_505.txt
+                            📄 image_1388.txt
+                            📄 image_1432.txt
+                            📄 image_1712.txt
+                            📄 image_778.txt
+                            📄 image_1423.txt
                             📄 [...]
-                            📄 image_1271.txt
-                            📄 image_1374.txt
-                            📄 image_533.txt
-                            📄 image_1030.txt
-                            📄 image_1496.txt
-                        📂 train/
-                            📄 image_1546.txt
-                            📄 image_52.txt
-                            📄 image_285_aug1.txt
-                            📄 image_1575_aug0.txt
-                            📄 image_1624.txt
-                            📄 [...]
-                            📄 image_71_aug0.txt
+                            📄 image_96.txt
                             📄 image_481.txt
-                            📄 image_205.txt
-                            📄 image_939.txt
-                            📄 image_434_aug0.txt
+                            📄 image_61.txt
+                            📄 image_135.txt
+                            📄 image_604.txt
                         📂 val/
-                            📄 image_968.txt
-                            📄 image_1121.txt
-                            📄 image_134.txt
-                            📄 image_1382.txt
-                            📄 image_1397.txt
+                            📄 image_1233.txt
+                            📄 image_585.txt
+                            📄 image_189.txt
+                            📄 image_493.txt
+                            📄 image_938.txt
                             📄 [...]
-                            📄 image_425.txt
-                            📄 image_167.txt
-                            📄 image_1136.txt
-                            📄 image_140.txt
-                            📄 image_1498.txt
+                            📄 image_777.txt
+                            📄 image_676.txt
+                            📄 image_981.txt
+                            📄 image_318.txt
+                            📄 image_828.txt
+                        📂 train/
+                            📄 image_1916_aug1.txt
+                            📄 image_1234_aug0.txt
+                            📄 image_85_aug0.txt
+                            📄 image_792.txt
+                            📄 image_975_aug1.txt
+                            📄 [...]
+                            📄 image_1360_aug1.txt
+                            📄 image_1263_aug0.txt
+                            📄 image_1086_aug0.txt
+                            📄 image_884_aug1.txt
+                            📄 image_1183_aug0.txt
                     📂 images/
                         📂 test/
-                            📄 image_797.jpg
-                            📄 image_13.jpg
-                            📄 image_265.jpg
-                            📄 image_601.jpg
-                            📄 image_1906.jpg
+                            📄 image_733.jpg
+                            📄 image_309.jpg
+                            📄 image_180.jpg
+                            📄 image_55.jpg
+                            📄 image_763.jpg
                             📄 [...]
-                            📄 image_1476.jpg
-                            📄 image_1132.jpg
-                            📄 image_1330.jpg
-                            📄 image_419.jpg
-                            📄 image_1018.jpg
-                        📂 train/
-                            📄 image_459_aug0.jpg
-                            📄 image_963.jpg
-                            📄 image_1354.jpg
-                            📄 image_1195_aug1.jpg
-                            📄 image_1661.jpg
-                            📄 [...]
-                            📄 image_322.jpg
-                            📄 image_929.jpg
-                            📄 image_12_aug1.jpg
-                            📄 image_1827_aug1.jpg
-                            📄 image_1723_aug0.jpg
+                            📄 image_481.jpg
+                            📄 image_716.jpg
+                            📄 image_1399.jpg
+                            📄 image_315.jpg
+                            📄 image_823.jpg
                         📂 val/
-                            📄 image_1544.jpg
-                            📄 image_684.jpg
-                            📄 image_380.jpg
-                            📄 image_846.jpg
-                            📄 image_1722.jpg
+                            📄 image_1921.jpg
+                            📄 image_579.jpg
+                            📄 image_405.jpg
+                            📄 image_1080.jpg
+                            📄 image_738.jpg
                             📄 [...]
-                            📄 image_21.jpg
-                            📄 image_1806.jpg
-                            📄 image_965.jpg
-                            📄 image_1192.jpg
-                            📄 image_1494.jpg
+                            📄 image_1133.jpg
+                            📄 image_1452.jpg
+                            📄 image_1904.jpg
+                            📄 image_1301.jpg
+                            📄 image_1160.jpg
+                        📂 train/
+                            📄 image_1101_aug1.jpg
+                            📄 image_1963_aug0.jpg
+                            📄 image_792.jpg
+                            📄 image_1776_aug0.jpg
+                            📄 image_928_aug1.jpg
+                            📄 [...]
+                            📄 image_66_aug1.jpg
+                            📄 image_1845_aug1.jpg
+                            📄 image_1263.jpg
+                            📄 image_1293_aug1.jpg
+                            📄 image_254_aug1.jpg
+        📂 models/
         📂 results/
             📂 TrainingSessions/
-📂 .virtual_documents/
+    📂 notebooks/
+        📄 tree_structure.txt
+        📄 Utilities_dev.ipynb
+        📄 notebook_test_foldersTree.txt
+        📄 LEGO_Bricks_Identification_Project_Technical_Report.ipynb
+        📄 Technical_Report.md
+        📄 LEGO_Bricks_Project_Miguel_Di_Lalla.ipynb
+        📄 yolov8n.pt
+        📄 LEGO_MachineVision_refactorTest.ipynb
+        📄 LEGO_Bricks_Identification_Project_Overview.ipynb
+        📄 Technical_Report.ipynb
+        📄 TrainTest.ipynb
+    📂 presentation/
+        📂 Datasets_Compress/
+            📄 BrickStuds_Dataset.zip
+            📄 LegoBricks_Dataset.zip
+        📂 Models_DEMO/
+            📄 Stud_Model_best20250124_170824.pt
+            📄 Brick_Model_best20250123_192838t.pt
