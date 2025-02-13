@@ -524,15 +524,19 @@ def parse_args():
 # Main execution
 
 def main():
-    """
-    Main execution pipeline for training setup and initialization.
-    """
     setup_logging()
     args = parse_args()
     
     logging.info("=== LEGO ML Training Pipeline Starting ===")
     device = detect_hardware()
     logging.info(f"Using device: {device}")
+    
+    # Optional: Validate batch size if GPUs are available
+    if torch.cuda.is_available():
+        num_gpus = torch.cuda.device_count()
+        if args.batch_size % num_gpus != 0:
+            raise ValueError(f"Batch size ({args.batch_size}) must be a multiple of GPU count ({num_gpus}). "
+                             f"Try --batch-size {num_gpus if num_gpus else 'appropriate_multiple'}.")
     
     setup_execution_structure()
     dataset_path = unzip_dataset(args.mode, args.force_extract)
