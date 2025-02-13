@@ -424,6 +424,15 @@ def select_model(mode, use_pretrained=False):
 
 # Training the model
 
+def save_model(model, output_dir, model_name="trained_model.pt"):
+    """
+    Saves the trained model to the specified directory.
+    """
+    model_save_path = os.path.join(output_dir, model_name)
+    model.save(model_save_path)
+    logging.info(f"✅ Model saved to: {model_save_path}")
+    return model_save_path
+
 def train_model(dataset_path, model_path, device, epochs, batch_size, output_dir):
     """
     Trains the YOLOv8 model with real-time logging and CLI streaming.
@@ -443,8 +452,10 @@ def train_model(dataset_path, model_path, device, epochs, batch_size, output_dir
         f"epochs={epochs}",
         f"batch={batch_size}",
         f"device={device}",
-        f"project={results_dir}",  # ✅ Ensure YOLO saves results to the right place
+        f"project={output_dir}",  # ✅ Ensure YOLO saves results to the right place
         f"name={training_name}",
+        #early stopping
+        "patience=3",
         "exist_ok=True"
     ]
     
@@ -458,14 +469,19 @@ def train_model(dataset_path, model_path, device, epochs, batch_size, output_dir
     process.wait()
     logging.info("✅ Training completed.")
 
+    # Save the trained model
+    save_model(model, results_dir)
+
     return results_dir  # ✅ Return path to the saved results
 #zip results
 
 def zip_training_results(training_dir):
     """
-    Compresses training results into a zip file for easy retrieval and logs a download link.
+    Compresses the content of training_dir into a zip file named results_[timestamp].zip,
+    logs a download link, and returns the zip filename.
     """
-    zip_filename = f"{training_dir}.zip"
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    zip_filename = os.path.join(os.path.dirname(training_dir), f"results_{timestamp}.zip")
     with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for root, _, files in os.walk(training_dir):
             for file in files:
@@ -493,7 +509,10 @@ def export_logs(log_name="train_session", output_format="json"):
         logging.error(f"❌ Log file not found: {log_path}")
         return None
 
-    export_path = log_path.replace(".log", f".{output_format}")
+    repo_root = get_repo_root()
+    export_dir = os.path.join(repo_root, "cache", "results")
+    os.makedirs(export_dir, exist_ok=True)
+    export_path = os.path.join(export_dir, f"{log_name}.{output_format}")
 
     if output_format == "json":
         with open(log_path, "r") as f:
@@ -563,11 +582,12 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
     train_model(dataset_yolo_path, model_path, device, args.epochs, args.batch_size, output_dir)
     
+    # Export logs once with correct parameter name
+    export_logs(log_name="train_session", output_format="json")
+
     if args.zip_results:
         zip_training_results(output_dir, output_dir)
     
-    # Export logs once with correct parameter name
-    export_logs(log_name="train_session")
 
     if args.cleanup:
         cleanup_after_training(dataset_path, dataset_yolo_path)
