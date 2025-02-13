@@ -436,28 +436,32 @@ def train_model(dataset_path, model_path, device, epochs, batch_size, output_dir
     model = YOLO(model_path)
     training_name = f"training_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     
+    results_dir = os.path.join(output_dir, "results")
+    os.makedirs(results_dir, exist_ok=True)
+    
     command = [
         "yolo",
         "train",
-        f"data={dataset_path}/dataset.yaml",  # ✅ Append dataset.yaml
+        f"data={dataset_path}/dataset.yaml",
         f"epochs={epochs}",
         f"batch={batch_size}",
         f"device={device}",
-        f"project={output_dir}",
+        f"project={results_dir}",  # ✅ Ensure YOLO saves results to the right place
         f"name={training_name}",
         "exist_ok=True"
     ]
     
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    
+
     for line in iter(process.stdout.readline, ""):
-        logging.info(line.strip())  # Log immediately
-        print(line.strip())  # Stream to CLI
-    
+        logging.info(line.strip())  # ✅ Log everything
+        print(line.strip())  # ✅ Print to CLI for visibility
+
     process.stdout.close()
     process.wait()
     logging.info("✅ Training completed.")
 
+    return results_dir  # ✅ Return path to the saved results
 #zip results
 
 def zip_training_results(training_dir):
@@ -553,6 +557,11 @@ def main():
     if args.zip_results:
         zip_training_results(output_dir, output_dir)
     
+    # ✅ Ensure logs are exported after training
+    export_logs(log_name="train_session")
+
+    logging.info(f"Training results saved in: {training_results_path}")
+
     if args.cleanup:
         cleanup_after_training(dataset_path, dataset_yolo_path)
     
