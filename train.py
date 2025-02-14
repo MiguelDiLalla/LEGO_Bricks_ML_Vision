@@ -481,24 +481,21 @@ def train_model(dataset_path, model_path, device, epochs, batch_size):
     return results_dir  # ✅ FIXED: Returning correct path
 #zip results
 
-def zip_training_results(training_dir):
+def zip_training_results(results_dir=os.path.join(os.getcwd(), "results"), output_filename=os.path.join(os.getcwd(), "results", "training_results.zip")):
     """
-    Compresses the content of training_dir into a zip file named results_[timestamp].zip,
-    logs a download link, and returns the zip filename.
+    Compresses the entire results directory into a ZIP file and provides a download link.
+
+    Args:
+        results_dir (str): The path to the results folder.
+        output_filename (str): Name of the output zip file.
     """
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    zip_filename = os.path.join(os.path.dirname(training_dir), f"results_{timestamp}.zip")
-    with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        for root, _, files in os.walk(training_dir):
+    with zipfile.ZipFile(output_filename, "w", zipfile.ZIP_DEFLATED) as zipf:
+        for root, _, files in os.walk(results_dir):
             for file in files:
                 file_path = os.path.join(root, file)
-                zipf.write(file_path, os.path.relpath(file_path, training_dir))
-    abs_zip_path = os.path.abspath(zip_filename)
-    download_link = f"file://{abs_zip_path}"
-    logging.info(f"✅ Training results compressed into: {zip_filename}")
-    logging.info(f"Download link: {download_link}")
-    print(f"\nDownload link for results: {download_link}\n")
-    return zip_filename
+                zipf.write(file_path, os.path.relpath(file_path, results_dir))
+    logging.info(f"✅ Training results compressed into: {output_filename}")
+    return output_filename
 
 # Export logs
 
@@ -593,7 +590,7 @@ def main():
 
     if args.zip_results:
         logging.info("Compressing training results...")
-        zip_training_results(output_dir)
+        zip_training_results()
     
 
     if args.cleanup:
