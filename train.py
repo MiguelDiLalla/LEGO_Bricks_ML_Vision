@@ -1,19 +1,19 @@
-    import os
-    import logging
-    import torch
-    import shutil
-    import zipfile
-    import json
-    import random
-    import argparse
-    from datetime import datetime
-    import subprocess
-    import cv2
-    import albumentations as A
-    from albumentations.pytorch import ToTensorV2
-    import yaml
-    from ultralytics import YOLO
-    from pathlib import Path
+import os
+import logging
+import torch
+import shutil
+import zipfile
+import json
+import random
+import argparse
+from datetime import datetime
+import subprocess
+import cv2
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
+import yaml
+from ultralytics import YOLO
+from pathlib import Path
 
 
     #all imports
