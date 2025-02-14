@@ -446,7 +446,7 @@ def train_model(dataset_path, model_path, device, epochs, batch_size):
     training_name = f"training_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     
     repo_root = os.getcwd()
-    results_dir = os.path.join(repo_root, "results", training_name)  # ✅ FIXED: Ensure results are correctly nested
+    results_dir = os.path.join(repo_root, "results")  # ✅ FIXED: Ensure results are correctly nested
     os.makedirs(results_dir, exist_ok=True)
     
 
@@ -593,7 +593,7 @@ def main():
 
     if args.zip_results:
         logging.info("Compressing training results...")
-        # zip_training_results(output_dir)
+        zip_training_results(output_dir)
     
 
     if args.cleanup:
