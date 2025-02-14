@@ -37,6 +37,7 @@ dist/
 results/
 output/
 tests/
+notebooks/
 
 # ✅ Ignore IDE and editor-specific files
 .vscode/
