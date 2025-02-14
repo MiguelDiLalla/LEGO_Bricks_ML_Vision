@@ -535,8 +535,6 @@ def zip_and_download_results(results_dir=None, output_filename=None):
     
 
     # First copy the logs folder to the results folder
-    shutil.copytree(log_src, log_dst, dirs_exist_ok=True)   
-    # First copy the logs folder to the results folder
     log_src = os.path.join(os.getcwd(), "logs")
     log_dst = os.path.join(results_dir, "logs")
     shutil.copytree(log_src, log_dst)   
