@@ -48,10 +48,7 @@ def cli():
 @click.option("--batch-size", type=int, default=16, help="Batch size")
 @click.option("--use-pretrained", is_flag=True, help="Use LEGO-trained model")
 @click.option("--cleanup", is_flag=True, help="Remove cached datasets after training")
-# By default, zip_results is True. To disable, we add a reverse flag.
-@click.option("--zip-results", "zip_results", flag_value=True, default=True, help="Compress training results after completion (default: enabled)")
-@click.option("--no-zip-results", "zip_results", flag_value=False, help="Do not compress training results after completion")
-def train(mode, epochs, batch_size, use_pretrained, cleanup, zip_results):
+def train(mode, epochs, batch_size, use_pretrained, cleanup):
     """Train a YOLO model."""
     logging.info("Starting training...")
     command = ["python3", "train.py", "--mode", mode, "--epochs", str(epochs), "--batch-size", str(batch_size)]
@@ -59,11 +56,6 @@ def train(mode, epochs, batch_size, use_pretrained, cleanup, zip_results):
         command.append("--use-pretrained")
     if cleanup:
         command.append("--cleanup")
-    # Pass the ZIP flag according to the parsed value.
-    if zip_results:
-        command.append("--zip-results")
-    else:
-        command.append("--no-zip-results")
     subprocess.run(command)
 
 @click.command()

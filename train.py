@@ -523,6 +523,7 @@ def parse_args():
     parser.add_argument("--cleanup", action="store_true", help="Remove cached datasets after training")
     parser.add_argument("--force-extract", action="store_true", help="Force re-extraction of dataset")
     parser.add_argument("--use-pretrained", action="store_true", help="Use LEGO-trained model instead of YOLOv8n")
+    
     return parser.parse_args()
 
 # Main execution
