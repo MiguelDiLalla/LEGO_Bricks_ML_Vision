@@ -586,12 +586,13 @@ def main():
 
     if args.zip_results:
         logging.info("Compressing training results...")
-        zip_training_results(output_dir)
+        # zip_training_results(output_dir)
     
 
     if args.cleanup:
-        cleanup_after_training(dataset_path, dataset_yolo_path)
-    
+        # cleanup_after_training(dataset_path, dataset_yolo_path)
+        pass
+
     logging.info("✅ Training pipeline completed successfully.")
 
 
