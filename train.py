@@ -56,19 +56,17 @@ def setup_logging():
         handlers=[stream_handler, file_handler]
     )
 
-def cleanup_after_training(CWD = os.getcwd()):
+def cleanup_after_training():
     """
-    Cleans up temporary data: 
-    cache/ 
-    logs/
-    results/
-
-    folders after training.
+    Cleans up temporary directories:
+      - cache/
+      - logs/
+      - results/
     """
-
+    repo_root = get_repo_root()
     folders = ["cache", "logs", "results"]
     for folder in folders:
-        folder_path = os.path.join(CWD, folder)
+        folder_path = os.path.join(repo_root, folder)
         if os.path.exists(folder_path):
             shutil.rmtree(folder_path)
             logging.info(f"✅ Removed: {folder_path}")
@@ -561,7 +559,7 @@ def parse_args():
                         help="Number of training epochs")
     parser.add_argument("--batch-size", type=int, default=16, 
                         help="Batch size for training")
-    parser.add_argument("--cleanup", action="store_true", 
+    parser.add_argument("--cleanup", type=bool, default=True,
                         help="Remove cached datasets, logs and results folder after training")
     parser.add_argument("--force-extract", action="store_true", 
                         help="Force re-extraction of dataset")
@@ -621,7 +619,7 @@ def main():
 
     # Clean up everything
     if args.cleanup:
-        logging.info("Cleaning up temporary files...")
+        logging.info("✅ Cleaning up temporary files...")
         cleanup_after_training()
         
     logging.info("✅ Training pipeline completed successfully.")
