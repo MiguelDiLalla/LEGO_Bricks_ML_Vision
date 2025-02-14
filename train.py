@@ -456,7 +456,7 @@ def train_model(dataset_path, model_path, device, epochs, batch_size, output_dir
         f"epochs={epochs}",
         f"batch={batch_size}",
         f"device={device}",
-        f"project={repo_root}/results",  # ✅ FIXED: Ensures results stay in the right place
+        f"project={results_dir}/results",  # ✅ FIXED: Ensures results stay in the right place
         f"name={training_name}",
         "exist_ok=True"
     ]
