@@ -56,30 +56,25 @@ def setup_logging():
         handlers=[stream_handler, file_handler]
     )
 
-def cleanup_after_training(dataset_path, dataset_yolo_path):
+def cleanup_after_training(CWD = os.getcwd()):
     """
-    Cleans up temporary data after training.
+    Cleans up temporary data: 
+    cache/ 
+    logs/
+    results/
+
+    folders after training.
     """
-    logging.info("🧹 Cleaning up temporary files...")
-    # Remove extracted dataset
-    if Path(dataset_path).exists():
-        shutil.rmtree(dataset_path)
-        logging.info(f"Deleted dataset from: {dataset_path}")
 
-    # Remove augmented images
-    train_images_path = Path(dataset_yolo_path) / "dataset" / "images" / "train"
-    if train_images_path.exists():
-        for img_file in train_images_path.iterdir():
-            if img_file.suffix in [".jpg", ".png"]:
-                img_file.unlink()
-        logging.info(f"Deleted augmented images from: {train_images_path}")
-
-    # Remove intermediate YOLO artifacts
-    yolo_cache_path = Path(dataset_yolo_path) / "dataset"
-    if yolo_cache_path.exists():
-        shutil.rmtree(yolo_cache_path)
-    logging.info("✅ Cleanup complete.")
-
+    folders = ["cache", "logs", "results"]
+    for folder in folders:
+        folder_path = os.path.join(CWD, folder)
+        if os.path.exists(folder_path):
+            shutil.rmtree(folder_path)
+            logging.info(f"✅ Removed: {folder_path}")
+        else:
+            logging.warning(f"❌ Not found: {folder_path}")
+    
 
 def get_repo_root() -> Path:
     """
@@ -615,7 +610,7 @@ def main():
     zip_and_download_results()
 
     if args.cleanup:
-        # cleanup_after_training(dataset_path, dataset_yolo_path)
+        cleanup_after_training()
         pass
 
     logging.info("✅ Training pipeline completed successfully.")
