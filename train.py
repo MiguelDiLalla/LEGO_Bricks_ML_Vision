@@ -609,13 +609,13 @@ def main():
     # Zip and download results
     zip_and_download_results()
 
-    if args.cleanup:
-        cleanup_after_training()
-        pass
 
     logging.info("✅ Training pipeline completed successfully.")
     logging.shutdown()  # Ensure all log messages are flushed to file
 
+    if args.cleanup:
+        cleanup_after_training()
+        
 
 if __name__ == "__main__":
     setup_logging()  # ensure logging is configured, so emojis appear in all log entries
