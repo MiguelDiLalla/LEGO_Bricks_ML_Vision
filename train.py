@@ -555,12 +555,18 @@ def parse_args():
         argparse.Namespace: Parsed arguments.
     """
     parser = argparse.ArgumentParser(description="LEGO ML Training Pipeline")
-    parser.add_argument("--mode", type=str, choices=["bricks", "studs"], required=True, help="Training mode: 'bricks' or 'studs'")
-    parser.add_argument("--epochs", type=int, default=20, help="Number of training epochs")
-    parser.add_argument("--batch-size", type=int, default=16, help="Batch size for training")
-    parser.add_argument("--cleanup", action="store_true", help="Remove cached datasets after training")
-    parser.add_argument("--force-extract", action="store_true", help="Force re-extraction of dataset")
-    parser.add_argument("--use-pretrained", action="store_true", help="Use LEGO-trained model instead of YOLOv8n")
+    parser.add_argument("--mode", type=str, choices=["bricks", "studs"], required=True, 
+                        help="Training mode: 'bricks' or 'studs'")
+    parser.add_argument("--epochs", type=int, default=20, 
+                        help="Number of training epochs")
+    parser.add_argument("--batch-size", type=int, default=16, 
+                        help="Batch size for training")
+    parser.add_argument("--cleanup", action="store_true", 
+                        help="Remove cached datasets after training")
+    parser.add_argument("--force-extract", action="store_true", 
+                        help="Force re-extraction of dataset")
+    parser.add_argument("--use-pretrained", action="store_true", 
+                        help="Use LEGO-trained model instead of YOLOv8n")
     
     return parser.parse_args()
 
@@ -605,17 +611,21 @@ def main():
     
     # Export logs once with correct parameter name
     export_logs()
-
+    if args.cleanup:
+        cleanup_after_training()
+    
+    logging.shutdown()  # Ensure all log messages are flushed to file
     # Zip and download results
     zip_and_download_results()
 
 
-    logging.info("✅ Training pipeline completed successfully.")
-    logging.shutdown()  # Ensure all log messages are flushed to file
-
+    # Clean up everything
     if args.cleanup:
+        logging.info("Cleaning up temporary files...")
         cleanup_after_training()
         
+    logging.info("✅ Training pipeline completed successfully.")
+    logging.shutdown()
 
 if __name__ == "__main__":
     setup_logging()  # ensure logging is configured, so emojis appear in all log entries
