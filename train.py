@@ -449,6 +449,10 @@ def train_model(dataset_path, model_path, device, epochs, batch_size, output_dir
     results_dir = repo_root / "results" / training_name  # ✅ FIXED: Ensure results are correctly nested
     os.makedirs(results_dir, exist_ok=True)
     
+
+    #PRINT
+    print(f"the project path is:{results_dir}")
+
     command = [
         "yolo",
         "train",
@@ -456,7 +460,7 @@ def train_model(dataset_path, model_path, device, epochs, batch_size, output_dir
         f"epochs={epochs}",
         f"batch={batch_size}",
         f"device={device}",
-        f"project={results_dir}/",  # ✅ FIXED: Ensures results stay in the right place
+        f"project={results_dir}",  # ✅ FIXED: Ensures results stay in the right place
         f"name={training_name}",
         "exist_ok=True"
     ]
