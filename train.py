@@ -562,7 +562,7 @@ def parse_args():
     parser.add_argument("--batch-size", type=int, default=16, 
                         help="Batch size for training")
     parser.add_argument("--cleanup", action="store_true", 
-                        help="Remove cached datasets after training")
+                        help="Remove cached datasets, logs and results folder after training")
     parser.add_argument("--force-extract", action="store_true", 
                         help="Force re-extraction of dataset")
     parser.add_argument("--use-pretrained", action="store_true", 
