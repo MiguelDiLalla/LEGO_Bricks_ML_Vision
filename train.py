@@ -440,7 +440,7 @@ def save_model(model, output_dir, model_name="trained_model.pt"):
 
 def train_model(dataset_path, model_path, device, epochs, batch_size):
     """
-    Trains the YOLOv8 model with the updated logging configuration.
+    Trains the YOLOv8 model and displays its dynamic training progress bar.
     """
     logging.info(f"🚀 Starting training with model: {model_path}")
     
@@ -468,45 +468,45 @@ def train_model(dataset_path, model_path, device, epochs, batch_size):
         "exist_ok=True"
     ]
     
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    for line in iter(process.stdout.readline, ""):
-        logging.info(line.strip())
-        # Optionally, remove the following print() if you want logs only through logging
-        # print(line.strip())
-    process.stdout.close()
-    process.wait()
-    logging.info("✅ Training completed.")
+    # Run the command directly without capturing stdout/stderr so that YOLO's progress bar shows
+    subprocess.run(command, check=True)
     
+    logging.info("✅ Training completed.")
     return results_dir
 
 # Export logs
 
-def export_logs(log_name="train_session", output_format="json"):
+def export_logs(log_name="train_session"):
     """
-    Exports logs in JSON or TXT format for easy debugging.
+    Exports logs in JSON format inside the results directory.
 
     Args:
         log_name (str): The base name for the log file (without extension).
-        output_format (str): Format to save logs (default: JSON).
+        
     """
     log_path = os.path.join("logs", f"{log_name}.log")
-    if not os.path.exists(log_path):
-        logging.error(f"❌ Log file not found: {log_path}")
-        return None
-
-    repo_root = get_repo_root()
-    export_dir = os.path.join(repo_root, "results")
-    os.makedirs(export_dir, exist_ok=True)
-    export_path = os.path.join(export_dir, f"{log_name}.{output_format}")
-
-    if output_format == "json":
-        with open(log_path, "r") as f:
-            log_entries = [line.strip() for line in f.readlines()]
-        with open(export_path, "w") as f:
-            json.dump(log_entries, f, indent=4)
-    else:
-        shutil.copy(log_path, export_path)
-
+    export_path = log_path.replace(".log", ".json")
+    
+    hardware_info = {
+        "python_version": torch.__version__,
+        "cuda_available": torch.cuda.is_available(),
+        "device_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU",
+        "num_gpus": torch.cuda.device_count(),
+        "torch_version": torch.__version__,
+        "timestamp": datetime.now().isoformat()
+    }
+    
+    with open(log_path, "r") as f:
+        log_entries = [line.strip() for line in f.readlines()]
+    
+    session_data = {
+        "hardware_info": hardware_info,
+        "logs": log_entries
+    }
+    
+    with open(export_path, "w") as f:
+        json.dump(session_data, f, indent=4)
+    
     logging.info(f"✅ Logs exported to {export_path}")
     return export_path
 # Parse command-line arguments
@@ -566,7 +566,7 @@ def main():
     train_model(dataset_yolo_path, model_path, device, args.epochs, args.batch_size)
     
     # Export logs once with correct parameter name
-    export_logs(log_name="train_session", output_format="json")
+    export_logs()
 
     if args.cleanup:
         # cleanup_after_training(dataset_path, dataset_yolo_path)
