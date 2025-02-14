@@ -456,14 +456,15 @@ def train_model(dataset_path, model_path, device, epochs, batch_size):
     command = [
         "yolo",
         "train",
+        f"model={model_path}",
         f"data={dataset_path}/dataset.yaml",
         f"epochs={epochs}",
         f"batch={batch_size}",
         f"device={device}",
-        f"project={results_dir}",  # ✅ FIXED: Ensures results stay in the right place
+        f"project={results_dir}",
         f"name={training_name}",
-        # base model
-        f"weights={model_path}",
+        "patience=3",
+        "single_cls=True",
         "exist_ok=True"
     ]
     
