@@ -64,7 +64,7 @@ def cleanup_after_training():
       - results/
     """
     repo_root = get_repo_root()
-    folders = ["cache", "logs", "results"]
+    folders = ["cache", "results"]
     for folder in folders:
         folder_path = os.path.join(repo_root, folder)
         if os.path.exists(folder_path):
