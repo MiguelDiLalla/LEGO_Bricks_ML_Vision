@@ -511,9 +511,33 @@ def export_logs(log_name="train_session"):
     
     with open(export_path, "w") as f:
         json.dump(session_data, f, indent=4)
+        # Copy to results directory
+        shutil.copy(export_path, os.path.join(os.getcwd(), "results", f"{log_name}.json"))
     
     logging.info(f"✅ Logs exported to {export_path}")
     return export_path
+
+def zip_and_download_results(results_dir=os.path.join(os.getcwd(), "results"), output_filename=os.path.join(os.getcwd(), "results", "training_results.zip")):
+    """
+    Compresses the entire results directory into a ZIP file and provides a download link.
+
+    Args:
+        results_dir (str): The path to the results folder.
+        output_filename (str): Name of the output zip file.
+    """
+    if not os.path.exists(results_dir):
+        print("❌ No results folder found.")
+        return
+
+    # Create ZIP file
+    zip_path = shutil.make_archive(output_filename.replace(".zip", ""), 'zip', results_dir)
+    
+    print(f"✅ Training results compressed: {zip_path}")
+
+    # Provide a direct download link
+    display(FileLink(zip_path))
+
+
 # Parse command-line arguments
 def parse_args():
     """
@@ -572,6 +596,9 @@ def main():
     
     # Export logs once with correct parameter name
     export_logs()
+
+    # Zip and download results
+    zip_and_download_results()
 
     if args.cleanup:
         # cleanup_after_training(dataset_path, dataset_yolo_path)
