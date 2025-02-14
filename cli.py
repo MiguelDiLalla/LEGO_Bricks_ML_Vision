@@ -4,19 +4,37 @@ import logging
 import os
 import shutil
 
+class EmojiFormatter(logging.Formatter):
+    def format(self, record):
+        base_msg = super().format(record)
+        if record.levelno >= logging.ERROR:
+            emoji = "❌"
+        elif record.levelno >= logging.WARNING:
+            emoji = "⚠️"
+        elif record.levelno >= logging.INFO:
+            emoji = "✅"
+        else:
+            emoji = "💬"
+        return f"{base_msg} {emoji}"
+
 # Setup logging
 def setup_logging():
     """Configures logging for the CLI."""
     log_dir = "logs"
     os.makedirs(log_dir, exist_ok=True)
     log_file = os.path.join(log_dir, "cli.log")
+    
+    formatter = EmojiFormatter("%(asctime)s - %(levelname)s - %(message)s")
+    
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+    
+    file_handler = logging.FileHandler(log_file, mode="a")
+    file_handler.setFormatter(formatter)
+    
     logging.basicConfig(
         level=logging.INFO,
-        format="%(asctime)s - %(levelname)s - %(message)s",
-        handlers=[
-            logging.StreamHandler(),
-            logging.FileHandler(log_file, mode="a")
-        ]
+        handlers=[stream_handler, file_handler]
     )
 
 @click.group()

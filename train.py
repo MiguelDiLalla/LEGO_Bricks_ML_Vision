@@ -18,23 +18,37 @@ from pathlib import Path
 
 #all imports
 
-def setup_logging(log_name="train_session"):
-    """
-    Configures logging for the training script with immediate flushing.
-    """
+class EmojiFormatter(logging.Formatter):
+    def format(self, record):
+        base_msg = super().format(record)
+        if record.levelno >= logging.ERROR:
+            emoji = "❌"
+        elif record.levelno >= logging.WARNING:
+            emoji = "⚠️"
+        elif record.levelno >= logging.INFO:
+            emoji = "✅"
+        else:
+            emoji = "💬"
+        return f"{base_msg} {emoji}"
+
+def setup_logging():
+    """Configures logging for train.py execution."""
     log_dir = "logs"
     os.makedirs(log_dir, exist_ok=True)
-    log_file = os.path.join(log_dir, f"{log_name}.log")
+    log_file = os.path.join(log_dir, "train_session.log")
+    
+    formatter = EmojiFormatter("%(asctime)s - %(levelname)s - %(message)s")
+    
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+    
+    file_handler = logging.FileHandler(log_file, mode="a")
+    file_handler.setFormatter(formatter)
     
     logging.basicConfig(
         level=logging.INFO,
-        format="%(asctime)s - %(levelname)s - %(message)s",
-        handlers=[
-            logging.StreamHandler(),  # Immediate console logging
-            logging.FileHandler(log_file, mode="a")
-        ]
+        handlers=[stream_handler, file_handler]
     )
-    logging.info(f"Logging initialized: {log_file}")
 
 def cleanup_after_training(dataset_path, dataset_yolo_path):
     """
@@ -426,7 +440,7 @@ def save_model(model, output_dir, model_name="trained_model.pt"):
 
 def train_model(dataset_path, model_path, device, epochs, batch_size):
     """
-    Trains the YOLOv8 model with real-time logging and CLI streaming.
+    Trains the YOLOv8 model with the updated logging configuration.
     """
     logging.info(f"🚀 Starting training with model: {model_path}")
     
@@ -434,13 +448,11 @@ def train_model(dataset_path, model_path, device, epochs, batch_size):
     training_name = f"training_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     
     repo_root = os.getcwd()
-    results_dir = os.path.join(repo_root, "results")  # ✅ FIXED: Ensure results are correctly nested
+    results_dir = os.path.join(repo_root, "results")
     os.makedirs(results_dir, exist_ok=True)
     
-
-    #PRINT
-    print(f"the project path is:{results_dir}")
-
+    logging.info(f"Project path: {results_dir}")
+    
     command = [
         "yolo",
         "train",
@@ -457,16 +469,15 @@ def train_model(dataset_path, model_path, device, epochs, batch_size):
     ]
     
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-
     for line in iter(process.stdout.readline, ""):
         logging.info(line.strip())
-        print(line.strip())
-
+        # Optionally, remove the following print() if you want logs only through logging
+        # print(line.strip())
     process.stdout.close()
     process.wait()
     logging.info("✅ Training completed.")
-
-    return results_dir  # ✅ FIXED: Returning correct path
+    
+    return results_dir
 
 # Export logs
 
@@ -484,7 +495,7 @@ def export_logs(log_name="train_session", output_format="json"):
         return None
 
     repo_root = get_repo_root()
-    export_dir = os.path.join(repo_root, "cache", "results")
+    export_dir = os.path.join(repo_root, "results")
     os.makedirs(export_dir, exist_ok=True)
     export_path = os.path.join(export_dir, f"{log_name}.{output_format}")
 
@@ -564,4 +575,5 @@ def main():
 
 
 if __name__ == "__main__":
+    setup_logging()  # ensure logging is configured, so emojis appear in all log entries
     main()
