@@ -90,19 +90,7 @@ def detect_hardware():
     
     logging.warning("No GPU or MPS device detected. Falling back to CPU.")
     return "cpu"
-def zip_training_results(training_dir, output_dir):
-    """
-    Compresses training results into a zip file for easy retrieval.
-    """
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    zip_filename = os.path.join(output_dir, f"training_results_{timestamp}.zip")
-    with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        for root, _, files in os.walk(training_dir):
-            for file in files:
-                file_path = os.path.join(root, file)
-                zipf.write(file_path, os.path.relpath(file_path, training_dir))
-    logging.info(f"✅ Training results compressed into: {zip_filename}")
-    return zip_filename
+
 
 def export_logs(log_name="train_session"):
     """
@@ -479,23 +467,6 @@ def train_model(dataset_path, model_path, device, epochs, batch_size):
     logging.info("✅ Training completed.")
 
     return results_dir  # ✅ FIXED: Returning correct path
-#zip results
-
-def zip_training_results(results_dir=os.path.join(os.getcwd(), "results"), output_filename=os.path.join(os.getcwd(), "results", "training_results.zip")):
-    """
-    Compresses the entire results directory into a ZIP file and provides a download link.
-
-    Args:
-        results_dir (str): The path to the results folder.
-        output_filename (str): Name of the output zip file.
-    """
-    with zipfile.ZipFile(output_filename, "w", zipfile.ZIP_DEFLATED) as zipf:
-        for root, _, files in os.walk(results_dir):
-            for file in files:
-                file_path = os.path.join(root, file)
-                zipf.write(file_path, os.path.relpath(file_path, results_dir))
-    logging.info(f"✅ Training results compressed into: {output_filename}")
-    return output_filename
 
 # Export logs
 
@@ -538,9 +509,6 @@ def parse_args():
     parser.add_argument("--mode", type=str, choices=["bricks", "studs"], required=True, help="Training mode: 'bricks' or 'studs'")
     parser.add_argument("--epochs", type=int, default=20, help="Number of training epochs")
     parser.add_argument("--batch-size", type=int, default=16, help="Batch size for training")
-    # By default, zip_results is enabled. Users can disable it by using --no-zip-results.
-    parser.add_argument("--zip-results", dest="zip_results", action="store_true", default=True, help="Compress training results after completion (default: enabled)")
-    parser.add_argument("--no-zip-results", dest="zip_results", action="store_false", help="Disable compressing training results")
     parser.add_argument("--cleanup", action="store_true", help="Remove cached datasets after training")
     parser.add_argument("--force-extract", action="store_true", help="Force re-extraction of dataset")
     parser.add_argument("--use-pretrained", action="store_true", help="Use LEGO-trained model instead of YOLOv8n")
@@ -587,11 +555,6 @@ def main():
     
     # Export logs once with correct parameter name
     export_logs(log_name="train_session", output_format="json")
-
-    if args.zip_results:
-        logging.info("Compressing training results...")
-        zip_training_results()
-    
 
     if args.cleanup:
         # cleanup_after_training(dataset_path, dataset_yolo_path)
