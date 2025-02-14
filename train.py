@@ -436,7 +436,7 @@ def save_model(model, output_dir, model_name="trained_model.pt"):
     logging.info(f"✅ Model saved to: {model_save_path}")
     return model_save_path
 
-def train_model(dataset_path, model_path, device, epochs, batch_size, output_dir):
+def train_model(dataset_path, model_path, device, epochs, batch_size):
     """
     Trains the YOLOv8 model with real-time logging and CLI streaming.
     """
@@ -445,8 +445,8 @@ def train_model(dataset_path, model_path, device, epochs, batch_size, output_dir
     model = YOLO(model_path)
     training_name = f"training_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     
-    repo_root = get_repo_root()
-    results_dir = repo_root / "results" / training_name  # ✅ FIXED: Ensure results are correctly nested
+    repo_root = os.getcwd()
+    results_dir = os.path.join(repo_root, "results", training_name)  # ✅ FIXED: Ensure results are correctly nested
     os.makedirs(results_dir, exist_ok=True)
     
 
@@ -462,6 +462,8 @@ def train_model(dataset_path, model_path, device, epochs, batch_size, output_dir
         f"device={device}",
         f"project={results_dir}",  # ✅ FIXED: Ensures results stay in the right place
         f"name={training_name}",
+        # base model
+        f"weights={model_path}",
         "exist_ok=True"
     ]
     
@@ -583,7 +585,7 @@ def main():
     
     output_dir = os.path.join(get_repo_root(), "cache", "results")
     os.makedirs(output_dir, exist_ok=True)
-    train_model(dataset_yolo_path, model_path, device, args.epochs, args.batch_size, output_dir)
+    train_model(dataset_yolo_path, model_path, device, args.epochs, args.batch_size)
     
     # Export logs once with correct parameter name
     export_logs(log_name="train_session", output_format="json")
