@@ -14,6 +14,7 @@ from albumentations.pytorch import ToTensorV2
 import yaml
 from ultralytics import YOLO
 from pathlib import Path
+from IPython.display import FileLink, display
 
 
 #all imports
@@ -511,28 +512,43 @@ def export_logs(log_name="train_session"):
     
     with open(export_path, "w") as f:
         json.dump(session_data, f, indent=4)
-        # Copy to results directory
-        shutil.copy(export_path, os.path.join(os.getcwd(), "results", f"{log_name}.json"))
+        
     
     logging.info(f"✅ Logs exported to {export_path}")
     return export_path
 
-def zip_and_download_results(results_dir=os.path.join(os.getcwd(), "results"), output_filename=os.path.join(os.getcwd(), "results", "training_results.zip")):
+def zip_and_download_results(results_dir=None, output_filename=None):
     """
-    Compresses the entire results directory into a ZIP file and provides a download link.
+    copy the logs folder to the results folder
+    Compresses the entire results directory into a ZIP file outside the CWD 
+    and provides a download link.
 
     Args:
         results_dir (str): The path to the results folder.
         output_filename (str): Name of the output zip file.
+
     """
+    if results_dir is None:
+        results_dir = os.path.join(os.getcwd(), "results")
+    if output_filename is None:
+        output_filename = os.path.join(os.getcwd(), "..", "training_results.zip")
+    
+
+    # First copy the logs folder to the results folder
+    shutil.copytree(log_src, log_dst, dirs_exist_ok=True)   
+    # First copy the logs folder to the results folder
+    log_src = os.path.join(os.getcwd(), "logs")
+    log_dst = os.path.join(results_dir, "logs")
+    shutil.copytree(log_src, log_dst)   
+
     if not os.path.exists(results_dir):
-        print("❌ No results folder found.")
+        logging.error("❌ No results folder found.")
         return
 
     # Create ZIP file
     zip_path = shutil.make_archive(output_filename.replace(".zip", ""), 'zip', results_dir)
     
-    print(f"✅ Training results compressed: {zip_path}")
+    logging.info(f"✅ Training results compressed: {zip_path}")
 
     # Provide a direct download link
     display(FileLink(zip_path))

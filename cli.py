@@ -32,6 +32,11 @@ def setup_logging():
     file_handler = logging.FileHandler(log_file, mode="a")
     file_handler.setFormatter(formatter)
     
+    # Clear existing handlers to enforce our configuration
+    logger = logging.getLogger()
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
     logging.basicConfig(
         level=logging.INFO,
         handlers=[stream_handler, file_handler]
