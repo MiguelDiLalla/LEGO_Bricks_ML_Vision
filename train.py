@@ -63,12 +63,15 @@
 
     def get_repo_root() -> Path:
         """
-        Auto-detects the repository root directory.
+        Auto-detects the repository root directory. If inside a nested execution, returns the correct working directory.
         """
         current_dir = Path(__file__).resolve().parent
-        for parent in [current_dir] + list(current_dir.parents):
-            if (parent / ".git").exists():
-                return parent
+        while current_dir != current_dir.parent:  # Avoid infinite loops
+            if (current_dir / ".git").exists():
+                return current_dir
+            current_dir = current_dir.parent  # Move up one level
+
+        # If no .git found, return the current execution directory
         return Path.cwd()
 
     def detect_hardware():
@@ -140,7 +143,7 @@
             repo_root / "cache" / "datasets",
             repo_root / "cache" / "models",
             repo_root / "cache" / "logs",
-            repo_root / "cache" / "results" 
+            repo_root / "results"  # ✅ FIXED: Ensuring results go to the right place
         ]
         for directory in required_dirs:
             directory.mkdir(parents=True, exist_ok=True)
@@ -442,7 +445,8 @@
         model = YOLO(model_path)
         training_name = f"training_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         
-        results_dir = output_dir
+        repo_root = get_repo_root()
+        results_dir = repo_root / "results" / training_name  # ✅ FIXED: Ensure results are correctly nested
         os.makedirs(results_dir, exist_ok=True)
         
         command = [
@@ -452,27 +456,22 @@
             f"epochs={epochs}",
             f"batch={batch_size}",
             f"device={device}",
-            f"project={output_dir}",  # ✅ Ensure YOLO saves results to the right place
+            f"project={repo_root}/results",  # ✅ FIXED: Ensures results stay in the right place
             f"name={training_name}",
-            #early stopping
-            "patience=3",
             "exist_ok=True"
         ]
         
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 
         for line in iter(process.stdout.readline, ""):
-            logging.info(line.strip())  # ✅ Log everything
-            print(line.strip())  # ✅ Print to CLI for visibility
+            logging.info(line.strip())
+            print(line.strip())
 
         process.stdout.close()
         process.wait()
         logging.info("✅ Training completed.")
 
-        # Save the trained model
-        save_model(model, results_dir)
-
-        return results_dir  # ✅ Return path to the saved results
+        return results_dir  # ✅ FIXED: Returning correct path
     #zip results
 
     def zip_training_results(training_dir):
