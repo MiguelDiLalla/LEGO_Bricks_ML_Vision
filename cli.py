@@ -3,6 +3,7 @@ import subprocess
 import logging
 import os
 import shutil
+from train import get_repo_root
 
 class EmojiFormatter(logging.Formatter):
     def format(self, record):
@@ -95,17 +96,24 @@ def predict(image, save_annotated, output):
 
 @click.command()
 def cleanup():
-    """Clear cached files."""
-    cache_dirs = ["cache/datasets", "cache/models", "cache/results", "cache/logs"]
-    logging.info("⚠️ WARNING: This will delete cached datasets and models.")
-    if click.confirm("Are you sure?", default=False):
-        for folder in cache_dirs:
-            if os.path.exists(folder):
-                shutil.rmtree(folder)
-                logging.info(f"Deleted {folder}")
-        logging.info("✅ Cache cleanup complete.")
-    else:
-        logging.info("Cache cleanup aborted.")
+    """
+    Cleans up temporary directories:
+      - cache/
+      - logs/
+      - results/
+    """
+    logging.info("Cleaning up...")
+    repo_root = get_repo_root()
+    folders = ["cache", "results"]
+    for folder in folders:
+        folder_path = os.path.join(repo_root, folder)
+        if os.path.exists(folder_path):
+            shutil.rmtree(folder_path)
+            logging.info(f"✅ Removed: {folder_path}")
+        else:
+            logging.warning(f"❌ Not found: {folder_path}")
+
+
 
 @click.command()
 @click.argument("operation", type=click.Choice(["labelme-to-yolo", "keypoints-to-bboxes", "visualize"]))
