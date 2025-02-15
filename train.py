@@ -617,22 +617,21 @@ def parse_args():
                         help="Number of training epochs")
     parser.add_argument("--batch-size", type=int, default=16, 
                         help="Batch size for training")
-    parser.add_argument("--show-results", type=bool, default=True,
+    parser.add_argument("--show-results", dest="show_results", action="store_true",
                         help="Display results after training")
-    parser.add_argument("--cleanup", type=bool, default=True,
-                        help="Remove cached datasets, logs and results folder after training")
+    parser.add_argument("--no-show-results", dest="show_results", action="store_false",
+                        help="Do not display results after training")
+    parser.add_argument("--cleanup", dest="cleanup", action="store_true",
+                        help="Remove cached datasets, logs and results after training")
+    parser.add_argument("--no-cleanup", dest="cleanup", action="store_false",
+                        help="Do not remove cached datasets, logs and results after training")
     parser.add_argument("--force-extract", action="store_true", 
                         help="Force re-extraction of dataset")
     parser.add_argument("--use-pretrained", action="store_true", 
                         help="Use LEGO-trained model instead of YOLOv8n")
     
-    args = parser.parse_args()
-
-
-    args.cleanup = bool(args.cleanup)
-    args.show_results = bool(args.show_results)
-
-    return args
+    parser.set_defaults(show_results=True, cleanup=True)
+    return parser.parse_args()
 
 # Main execution
 
