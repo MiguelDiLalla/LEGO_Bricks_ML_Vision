@@ -267,20 +267,29 @@ def save_annotated_image(image_path, detections=None, destination_folder=None, l
     image_width, image_height = pil_image.size
     logo_position = (image_width - logo.width - margin, image_height - logo.height - margin)
     pil_image.paste(logo, logo_position, logo)
-    exif_data = pil_image.getexif()  # Updated call
+    
+    exif_data = pil_image.getexif()
     if exif_data:
         exif = {ExifTags.TAGS.get(tag, tag): value for tag, value in exif_data.items()}
     else:
         exif = {}
     metadata_str = "Metadata:\n" + "\n".join(f"{key}: {value}" for key, value in exif.items())
+
     font = ImageFont.load_default()
-    text_size = font.getsize_multiline(metadata_str)
-    metadata_image = Image.new("RGB", (image_width, text_size[1] + margin), (255, 255, 255))
+    # Use a dummy image to compute multiline text bounding box
+    dummy_img = Image.new("RGB", (image_width, 1000))
+    dummy_draw = ImageDraw.Draw(dummy_img)
+    bbox = dummy_draw.multiline_textbbox((0, 0), metadata_str, font=font)
+    text_height = bbox[3] - bbox[1]
+    
+    metadata_image = Image.new("RGB", (image_width, text_height + margin), (255, 255, 255))
     draw = ImageDraw.Draw(metadata_image)
-    draw.text((margin, margin // 2), metadata_str, font=font, fill=(0, 0, 0))
+    draw.multiline_text((margin, margin // 2), metadata_str, font=font, fill=(0, 0, 0))
+    
     combined_image = Image.new("RGB", (image_width, image_height + metadata_image.height))
     combined_image.paste(pil_image, (0, 0))
     combined_image.paste(metadata_image, (0, image_height))
+    
     if destination_folder is None:
         destination_folder = os.getcwd()
     os.makedirs(destination_folder, exist_ok=True)
