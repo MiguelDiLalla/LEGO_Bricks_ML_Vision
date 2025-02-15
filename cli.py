@@ -52,15 +52,31 @@ def cli():
 @click.option("--epochs", type=int, default=20, help="Number of epochs")
 @click.option("--batch-size", type=int, default=16, help="Batch size")
 @click.option("--use-pretrained", is_flag=True, help="Use LEGO-trained model")
-@click.option("--cleanup", is_flag=True, help="Remove cached datasets after training")
-def train(mode, epochs, batch_size, use_pretrained, cleanup):
+@click.option("--cleanup/--no-cleanup", default=True, help="Remove cached datasets, logs and results after training")
+@click.option("--force-extract", is_flag=True, help="Force re-extraction of dataset")
+@click.option("--show-results/--no-show-results", default=True, help="Display results after training")
+def train(mode, epochs, batch_size, use_pretrained, cleanup, force_extract, show_results):
     """Train a YOLO model."""
     logging.info("Starting training...")
-    command = ["python3", "train.py", "--mode", mode, "--epochs", str(epochs), "--batch-size", str(batch_size)]
+    command = [
+        "python3",
+        "train.py",
+        "--mode", mode,
+        "--epochs", str(epochs),
+        "--batch-size", str(batch_size)
+    ]
     if use_pretrained:
         command.append("--use-pretrained")
     if cleanup:
         command.append("--cleanup")
+    else:
+        command.append("--no-cleanup")
+    if force_extract:
+        command.append("--force-extract")
+    if show_results:
+        command.append("--show-results")
+    else:
+        command.append("--no-show-results")
     subprocess.run(command)
 
 @click.command()
