@@ -16,7 +16,7 @@ from ultralytics import YOLO
 import piexif
 import cv2
 from PIL import Image, ImageDraw, ImageFont, ExifTags
-from cli import EmojiFormatter  # ensure cli.py is in the PYTHONPATH
+from lego_cli import EmojiFormatter  # ensure lego_cli.py is in the PYTHONPATH
 
 
 # Setup logging
