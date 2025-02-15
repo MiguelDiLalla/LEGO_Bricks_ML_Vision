@@ -88,7 +88,7 @@ def train(mode, epochs, batch_size, use_pretrained, cleanup, force_extract, show
 def predict(image, save_annotated, output):
     """Run inference on an image."""
     logging.info(f"Running inference on {image}")
-    command = ["python3", "model_utils.py", "--image", image]
+    command = [sys.executable, "utils/model_utils.py", "--image", image]
     if save_annotated:
         command.append("--save-annotated")
     if output:
@@ -106,8 +106,8 @@ def infer(images, mode, batch_size, save_annotated, plt_annotated, export_result
     """Run inference workflows defined in model_utils."""
     logging.info("Running inference workflows...")
     command = [
-        sys.executable,  # Use current interpreter
-        "model_utils.py",
+        sys.executable,
+        "utils/model_utils.py",  # Updated file path
         "--images"
     ]
     for img in images:
