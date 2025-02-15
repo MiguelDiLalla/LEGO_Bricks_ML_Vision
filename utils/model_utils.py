@@ -3,7 +3,6 @@ import sys
 import json
 import random
 import logging
-import platform
 import datetime
 import hashlib
 import argparse
@@ -17,6 +16,7 @@ from ultralytics import YOLO
 import piexif
 import cv2
 from PIL import Image, ImageDraw, ImageFont, ExifTags
+from cli import EmojiFormatter  # ensure cli.py is in the PYTHONPATH
 
 
 # Setup logging
@@ -25,16 +25,23 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[logging.StreamHandler()]
 )
+logger = logging.getLogger()
+for handler in logger.handlers:
+    handler.setFormatter(EmojiFormatter("%(asctime)s - %(levelname)s - %(message)s"))
 
 def load_model(mode):
     """
     Loads the YOLO model based on the selected mode.
-    
+
     Args:
-        mode (str): 'bricks', 'studs', or 'classify'.
-    
+        mode (str): Mode of operation. Allowed values are "bricks" or "studs".
+
     Returns:
-        YOLO: Loaded model object.
+        YOLO: The loaded YOLO model instance.
+
+    Raises:
+        ValueError: If an unsupported mode is provided.
+        FileNotFoundError: If the model file does not exist.
     """
     model_paths = {
         "bricks": "presentation/Models_DEMO/Brick_Model_best20250123_192838t.pt",
@@ -42,13 +49,15 @@ def load_model(mode):
     }
     
     if mode not in model_paths:
+        logging.error(f"Invalid mode '{mode}'. Use 'bricks' or 'studs'.")
         raise ValueError(f"Invalid mode '{mode}'. Choose from 'bricks' or 'studs'.")
-    
+
     model_path = model_paths[mode]
     
     if not os.path.exists(model_path):
+        logging.error(f"Model file not found: {model_path}")
         raise FileNotFoundError(f"Model file not found: {model_path}")
-    
+
     logging.info(f"🔹 Loading model: {model_path}")
     return YOLO(model_path)
 
@@ -81,16 +90,16 @@ def predict(image_paths, model, mode, batch_size=8, save_annotated=False, plt_an
     Perform batch prediction on a list of images.
 
     Args:
-        image_paths (list): List of paths to input images.
-        model (YOLO): Loaded YOLO model.
-        mode (str): Inference mode ('bricks', 'studs', 'classify').
-        batch_size (int): Number of images to process in a batch.
+        image_paths (list): List of file paths for input images.
+        model (YOLO): A loaded YOLO model.
+        mode (str): Inference mode, such as "bricks", "studs", or "classify".
+        batch_size (int): Number of images processed per batch.
         save_annotated (bool): Flag to save annotated images.
         plt_annotated (bool): Flag to display annotated images.
-        results_folder (str): Directory to save results.
+        results_folder (str): Directory to store results.
 
     Returns:
-        list: Inference results for all images.
+        list: A list of dictionaries with image paths and detection results.
     """
     results = []
     num_images = len(image_paths)
@@ -98,67 +107,41 @@ def predict(image_paths, model, mode, batch_size=8, save_annotated=False, plt_an
 
     for i in range(0, num_images, batch_size):
         batch_paths = image_paths[i:i + batch_size]
-        batch_images = [cv2.imread(img_path) for img_path in batch_paths]
-
-        # Check for any failed image loads
-        for idx, img in enumerate(batch_images):
+        # Load images; use list comprehension with error handling
+        batch_images = []
+        valid_paths = []
+        for img_path in batch_paths:
+            img = cv2.imread(img_path)
             if img is None:
-                logging.warning(f"Failed to load image: {batch_paths[idx]}")
-                batch_images.pop(idx)
-                batch_paths.pop(idx)
+                logging.warning(f"[Warning] Unable to load image: {img_path}")
+            else:
+                batch_images.append(img)
+                valid_paths.append(img_path)
 
         if not batch_images:
             continue
 
-        # Perform inference on the batch
         batch_results = model(batch_images)
-
-        for img_path, result in zip(batch_paths, batch_results):
+        for img_path, result in zip(valid_paths, batch_results):
+            annotated_img = None
             if save_annotated or plt_annotated:
                 annotated_img = result.plot()
-
                 if save_annotated and results_folder:
                     base_name = os.path.basename(img_path)
                     save_path = os.path.join(results_folder, f"annotated_{base_name}")
                     cv2.imwrite(save_path, annotated_img)
-                    logging.info(f"Annotated image saved to: {save_path}")
-
+                    logging.info(f"✅ Annotated image saved to: {save_path}")
                 if plt_annotated:
-                    import matplotlib.pyplot as plt
                     plt.imshow(cv2.cvtColor(annotated_img, cv2.COLOR_BGR2RGB))
                     plt.title(f"Annotated {os.path.basename(img_path)}")
                     plt.axis('off')
                     plt.show()
 
+            # Example of processing detections; additional mode-specific code can go here
             results.append({
                 'image_path': img_path,
                 'detections': result.boxes.data.cpu().numpy().tolist()
             })
-
-        if mode == 'studs':
-            # Extract stud bounding boxes from the result
-            studs = result.boxes.data.cpu().numpy().tolist()
-
-            # Classify brick dimension based on detected studs
-            brick_dimension = classify_brick_from_studs(
-                studs=studs,
-                image=annotated_img if save_annotated or plt_annotated else image,
-                working_folder=results_folder,
-                save_annotated=save_annotated,
-                plt_annotated=plt_annotated
-            )
-
-            results.append({
-                'image_path': img_path,
-                'detections': studs,
-                'brick_dimension': brick_dimension
-            })
-        else:
-            results.append({
-                'image_path': img_path,
-                'detections': result.boxes.data.cpu().numpy().tolist()
-            })
-
     return results
 
 STUD_TO_DIMENSION_MAP = {

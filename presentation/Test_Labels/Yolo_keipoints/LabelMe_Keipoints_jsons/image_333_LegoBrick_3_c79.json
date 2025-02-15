@@ -1,0 +1,146 @@
+{
+    "version": "5.2.1",
+    "flags": {},
+    "shapes": [
+        {
+            "label": "Stud",
+            "points": [
+                [
+                    80.126158900087,
+                    39.606708099171684
+                ],
+                [
+                    93.93104933789925,
+                    53.41159853698393
+                ]
+            ],
+            "group_id": null,
+            "description": "",
+            "shape_type": "rectangle",
+            "flags": {}
+        },
+        {
+            "label": "Stud",
+            "points": [
+                [
+                    65.8240994035195,
+                    35.14446553624262
+                ],
+                [
+                    79.62898984133174,
+                    48.94935597405487
+                ]
+            ],
+            "group_id": null,
+            "description": "",
+            "shape_type": "rectangle",
+            "flags": {}
+        },
+        {
+            "label": "Stud",
+            "points": [
+                [
+                    30.354991852032093,
+                    26.448813362329574
+                ],
+                [
+                    44.15988228984434,
+                    40.25370380014182
+                ]
+            ],
+            "group_id": null,
+            "description": "",
+            "shape_type": "rectangle",
+            "flags": {}
+        },
+        {
+            "label": "Stud",
+            "points": [
+                [
+                    27.60899642869113,
+                    4.3664334996293475
+                ],
+                [
+                    41.413886866503375,
+                    18.171323937441592
+                ]
+            ],
+            "group_id": null,
+            "description": "",
+            "shape_type": "rectangle",
+            "flags": {}
+        },
+        {
+            "label": "Stud",
+            "points": [
+                [
+                    43.284053636929116,
+                    13.405335101460011
+                ],
+                [
+                    57.08894407474136,
+                    27.21022553927226
+                ]
+            ],
+            "group_id": null,
+            "description": "",
+            "shape_type": "rectangle",
+            "flags": {}
+        },
+        {
+            "label": "Stud",
+            "points": [
+                [
+                    60.33210855683758,
+                    16.380163476746052
+                ],
+                [
+                    74.13699899464983,
+                    30.1850539145583
+                ]
+            ],
+            "group_id": null,
+            "description": "",
+            "shape_type": "rectangle",
+            "flags": {}
+        },
+        {
+            "label": "Stud",
+            "points": [
+                [
+                    74.74858452937762,
+                    21.643321371482894
+                ],
+                [
+                    88.55347496718987,
+                    35.44821180929514
+                ]
+            ],
+            "group_id": null,
+            "description": "",
+            "shape_type": "rectangle",
+            "flags": {}
+        },
+        {
+            "label": "Stud",
+            "points": [
+                [
+                    49.34812686347374,
+                    30.682222973313557
+                ],
+                [
+                    63.153017301285985,
+                    44.487113411125804
+                ]
+            ],
+            "group_id": null,
+            "description": "",
+            "shape_type": "rectangle",
+            "flags": {}
+        }
+    ],
+    "imagePath": "image_333_LegoBrick_3_c79.jpg",
+    "imageData": null,
+    "imageHeight": 77,
+    "imageWidth": 99
+}

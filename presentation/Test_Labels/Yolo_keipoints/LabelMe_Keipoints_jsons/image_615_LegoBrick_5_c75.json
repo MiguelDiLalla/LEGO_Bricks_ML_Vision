@@ -1,0 +1,27 @@
+{
+    "version": "5.2.1",
+    "flags": {},
+    "shapes": [
+        {
+            "label": "Stud",
+            "points": [
+                [
+                    24.897674732957373,
+                    8.397674732957373
+                ],
+                [
+                    37,
+                    25.602325267042627
+                ]
+            ],
+            "group_id": null,
+            "description": "",
+            "shape_type": "rectangle",
+            "flags": {}
+        }
+    ],
+    "imagePath": "image_615_LegoBrick_5_c75.jpg",
+    "imageData": null,
+    "imageHeight": 40,
+    "imageWidth": 37
+}

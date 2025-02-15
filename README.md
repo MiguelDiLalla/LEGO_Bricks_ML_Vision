@@ -1,105 +1,35 @@
-# LEGO Bricks ML Vision: Documentación
+# Training Capabilities
 
-Este proyecto se centra en la detección y clasificación de piezas de LEGO mediante pipelines modulares optimizados para entrenar modelos YOLO. La versión actual soporta los scripts principales `pipeline_setup.py` y `pipeline_train.py`.
+The training functionality is provided by the [`train`](cli.py) command. This command starts the YOLO model training pipeline with configurable parameters and automatic logging.
 
-## **Características Principales**
+## Command Usage
 
-- **Pipeline de Preprocesamiento (`pipeline_setup.py`)**:
-  - Configuración del entorno para ejecución en Kaggle, Colab o local.
-  - Creación de estructuras de carpetas para preparar datasets de entrenamiento.
-  - Aumentación de datos usando Albumentations.
-  - Generación de archivos `dataset.yaml` compatibles con YOLO.
-
-- **Pipeline de Entrenamiento (`pipeline_train.py`)**:
-  - Entrenamiento de modelos YOLO con hiperparámetros predefinidos.
-  - Optimización automática de hiperparámetros usando Optuna.
-  - Integración de visualización de progreso durante el entrenamiento.
-
-## **Requisitos del Sistema**
-
-- **Python**: >= 3.8
-- **Dependencias Clave**:
-  ```
-  torch==2.4.1+cpu
-  ultralytics==8.2.99
-  pillow==11.1.0
-  matplotlib==3.8.4
-  kaggle==1.6.17
-  albumentations==1.3.0
-  ```
-
-Instala las dependencias desde `requirements.txt`:
-```bash
-pip install -r requirements.txt
+```sh
+python3 cli.py train --mode <bricks|studs> [OPTIONS]
 ```
 
-## **Uso del Proyecto**
+### Options
 
-### 1. Configuración del Entorno
-Ejecuta `pipeline_setup.py` para preparar tu dataset:
-```bash
-python pipeline_setup.py
-```
-- Esto descargará y estructurará el dataset.
-- Generará aumentaciones y un archivo `dataset.yaml` compatible con YOLO.
+- --mode: (required) Specifies the training mode. Accepted values: bricks or studs.
+- --epochs: Sets the number of training epochs. (Default: 20)
+- --batch-size: Sets the batch size for training. (Default: 16)
+- --use-pretrained: Use a pre-trained LEGO model instead of training from scratch.
+- --cleanup / --no-cleanup: Enable or disable removal of temporary directories (cache, logs, results) after training. (Default: cleanup enabled)
+- --force-extract: Force re-extraction of the dataset even if it already exists.
+- --show-results / --no-show-results: Enable or disable the display of training session results after execution. (Default: show-results enabled)
 
-### 2. Entrenamiento del Modelo
-Ejecuta `pipeline_train.py` para entrenar el modelo YOLO:
-```bash
-python pipeline_train.py
-```
-Por defecto, entrena con hiperparámetros definidos. Para optimización automática con Optuna:
-```bash
-python pipeline_train.py --optuna-mode
+### Example
+
+Start a training session in "bricks" mode using a pre-trained model, with 10 epochs and a batch size of 16:
+
+```sh
+python3 cli.py train --mode bricks --use-pretrained --epochs 10 --batch-size 16
 ```
 
-## **Ejemplo de Docker**
-El pipeline puede ejecutarse en un contenedor Docker. Usa la siguiente plantilla para crear tu imagen Docker:
+### How It Works
 
-**Dockerfile**:
-```Dockerfile
-FROM python:3.8-slim
+The command assembles the training arguments and invokes train.py with the specified options.
+Logging is configured via the EmojiFormatter and setup_logging functions, ensuring that all training steps are logged with visual cues.
+Post-training, if enabled, temporary directories (such as cache and results) are cleaned up automatically.
 
-WORKDIR /app
-
-COPY . .
-
-RUN pip install --no-cache-dir -r requirements.txt
-
-ENTRYPOINT ["python", "pipeline_train.py"]
-```
-
-Construcción y ejecución:
-```bash
-docker build -t lego-ml .
-docker run --rm -v $(pwd):/app lego-ml
-```
-
-## **Estructura del Proyecto**
-```plaintext
-LEGO_Bricks_ML_Vision/
-├── scripts/
-│   ├── pipeline_setup.py    # Preprocesamiento del dataset
-│   ├── pipeline_train.py    # Entrenamiento del modelo YOLO
-├── requirements.txt         # Dependencias del proyecto
-├── Dockerfile               # Imagen Docker opcional
-├── README.md                # Documentación del proyecto
-└── results/                 # Carpeta para resultados y visualizaciones
-```
-
-## **Contribuciones**
-¡Las contribuciones son bienvenidas! Sigue estos pasos:
-1. Realiza un fork del repositorio.
-2. Crea una rama para tu funcionalidad:
-   ```bash
-   git checkout -b feature/nueva-funcionalidad
-   ```
-3. Envía un pull request con tus cambios.
-
-## **Próximos Pasos**
-- Implementar un pipeline de evaluación y visualización avanzado.
-- Optimizar compatibilidad y eficiencia para Docker.
-- Explorar estrategias de fine-tuning con más clases de piezas LEGO.
-
-## **Licencia**
-Este proyecto está licenciado bajo Apache License 2.0.
+For more details on the training process and logging configuration, please refer to the train.py and cli.py files.

@@ -1,0 +1,78 @@
+{
+    "version": "5.2.1",
+    "flags": {},
+    "shapes": [
+        {
+            "label": "Stud",
+            "points": [
+                [
+                    104.63039099846759,
+                    56.737985935176454
+                ],
+                [
+                    131.90125457115263,
+                    84.0088495078615
+                ]
+            ],
+            "group_id": null,
+            "description": "",
+            "shape_type": "rectangle",
+            "flags": {}
+        },
+        {
+            "label": "Stud",
+            "points": [
+                [
+                    81.05444163137899,
+                    39.96583403644228
+                ],
+                [
+                    108.32530520406404,
+                    67.23669760912733
+                ]
+            ],
+            "group_id": null,
+            "description": "",
+            "shape_type": "rectangle",
+            "flags": {}
+        },
+        {
+            "label": "Stud",
+            "points": [
+                [
+                    55.737985935176454,
+                    23.19368213770811
+                ],
+                [
+                    83.0088495078615,
+                    50.46454571039315
+                ]
+            ],
+            "group_id": null,
+            "description": "",
+            "shape_type": "rectangle",
+            "flags": {}
+        },
+        {
+            "label": "Stud",
+            "points": [
+                [
+                    29.788618846568873,
+                    6.2633023908726635
+                ],
+                [
+                    57.05948241925392,
+                    33.53416596355771
+                ]
+            ],
+            "group_id": null,
+            "description": "",
+            "shape_type": "rectangle",
+            "flags": {}
+        }
+    ],
+    "imagePath": "image_534_LegoBrick_0_c87.jpg",
+    "imageData": null,
+    "imageHeight": 111,
+    "imageWidth": 134
+}
