@@ -583,9 +583,94 @@ def zip_results(results_folder, output_path=None):
     logging.info(f"✅ Results exported to {zip_filepath}")
     return zip_filepath
 
+def compose_final_image(image_path, detections, logo_path="presentation/logo.png", output_folder="composed_results"):
+    """
+    Composes a final output image that integrates:
+    - The annotated image (using detections via draw_bboxes)
+    - A red vertical frame on the right (half the width of the original image)
+    - In the red area, the metadata (from EXIF) written in white with a console style font
+    - The logo placed at the bottom-right of the red area (dynamically resized)
+    """
+    # Create output folder if not exists
+    os.makedirs(output_folder, exist_ok=True)
+    
+    # Read the image using cv2 and create an annotated copy
+    original_cv = cv2.imread(image_path)
+    if original_cv is None:
+        logging.error(f"Unable to load image: {image_path}")
+        return None
+    annotated_cv = draw_bboxes(original_cv.copy(), detections, with_labels=True)
+    
+    # Convert annotated image to PIL format (RGB)
+    annotated_img = Image.fromarray(cv2.cvtColor(annotated_cv, cv2.COLOR_BGR2RGB))
+    orig_width, orig_height = annotated_img.size
+    
+    # Create a new canvas that is wider: original width + half of original width (red frame)
+    frame_width = orig_width // 2
+    new_width = orig_width + frame_width
+    new_image = Image.new("RGB", (new_width, orig_height), (255, 0, 0))  # red background
+    
+    # Paste the annotated image on left portion
+    new_image.paste(annotated_img, (0, 0))
+    
+    # Extract metadata from the original image (if exists)
+    pil_img = Image.open(image_path)
+    exif_data = pil_img._getexif()
+    metadata_str = ""
+    if exif_data:
+        for tag_id, value in exif_data.items():
+            tag = ExifTags.TAGS.get(tag_id, tag_id)
+            metadata_str += f"{tag}: {value}\n"
+    else:
+        metadata_str = "No metadata found."
+    
+    # Prepare to draw metadata text on the red frame area
+    draw = ImageDraw.Draw(new_image)
+    
+    # Try to load a monospaced (console style) font. This will use a default if not available.
+    try:
+        # Adjust font path as necessary for Windows; for example, 'Consola.ttf' from Consolas
+        font = ImageFont.truetype("consola.ttf", size=14)
+    except Exception:
+        font = ImageFont.load_default()
+    
+    # Define text area starting at orig_width with some margin
+    text_x = orig_width + 10
+    text_y = 10
+    # Set spacing and text color
+    text_color = (255, 255, 255)
+    # Draw the metadata text (wrap as needed manually, here we simply draw each line)
+    for line in metadata_str.splitlines():
+        draw.text((text_x, text_y), line, font=font, fill=text_color)
+        text_y += font.getsize(line)[1] + 2
+    
+    # Load and dynamically resize the logo to fit into red area: for example, width=30% of frame width
+    if os.path.exists(logo_path):
+        logo = Image.open(logo_path).convert("RGBA")
+        desired_logo_width = frame_width * 0.3
+        # maintain aspect ratio
+        logo_ratio = logo.height / logo.width
+        new_logo_size = (int(desired_logo_width), int(desired_logo_width * logo_ratio))
+        logo = logo.resize(new_logo_size, Image.ANTIALIAS)
+        # Compute position: bottom-right in red area with a small margin
+        margin = 10
+        logo_x = orig_width + frame_width - new_logo_size[0] - margin
+        logo_y = orig_height - new_logo_size[1] - margin
+        # Paste the logo (using its alpha as mask)
+        new_image.paste(logo, (logo_x, logo_y), logo)
+    else:
+        logging.warning(f"Logo file not found at {logo_path}")
+    
+    # Save the composed image
+    output_filename = os.path.basename(image_path)
+    output_path = os.path.join(output_folder, output_filename)
+    new_image.save(output_path)
+    logging.info(f"✅ Final composed image saved to: {output_path}")
+    return output_path
+
 def main():
     """
-    Main execution function for model inference.
+    Main execution function for model inference and image composition.
     """
     parser = argparse.ArgumentParser(description="LEGO Brick Classification & Detection")
     parser.add_argument("--images", type=str, nargs='+', required=True, help="Paths to the input images")
@@ -594,26 +679,26 @@ def main():
     parser.add_argument("--save-annotated", action="store_true", help="Save annotated images")
     parser.add_argument("--plt-annotated", action="store_true", help="Display annotated images")
     parser.add_argument("--export-results", action="store_true", help="Export results as a zip file to execution directory")
-
+    
     args = parser.parse_args()
-
+    
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(levelname)s - %(message)s",
         handlers=[logging.StreamHandler()]
     )
-
+    
     logging.info("🚀 Starting LEGO Brick Inference...")
-
-    # Load the model
+    
+    # Load the model based on the provided mode
     model = load_model(args.mode)
-
-    # Create results folder inside cache
+    
+    # Create a results folder inside cache (for annotated outputs, if not using composed images)
     timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
     results_folder = os.path.join("cache/results", f"{args.mode}_{timestamp}")
     os.makedirs(results_folder, exist_ok=True)
-
-    # Run inference
+    
+    # Run inference to get detection results
     results = predict(
         image_paths=args.images,
         model=model,
@@ -623,14 +708,23 @@ def main():
         plt_annotated=args.plt_annotated,
         results_folder=results_folder
     )
-
-    # Print results
+    
     logging.info("✅ Inference complete.")
     logging.info(json.dumps(results, indent=4))
-
+    
+    # For every input image, compose final image with red frame and metadata
+    composed_folder = os.path.join("composed_results", f"{args.mode}_{timestamp}")
+    os.makedirs(composed_folder, exist_ok=True)
+    
+    for result in results:
+        image_path = result.get("image_path")
+        detections = result.get("detections", [])
+        compose_final_image(image_path, detections, logo_path="presentation/logo.png", output_folder=composed_folder)
+    
     # Zip results if requested
     if args.export_results:
-        zip_results(results_folder)
+        # Uncomment the next line if you wish to zip the results folder
+        # zip_results(results_folder)
 
 if __name__ == "__main__":
     main()
