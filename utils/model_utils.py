@@ -254,9 +254,6 @@ def add_metadata(image_path, output_path, user_comment):
     image.save(output_path, "jpeg", exif=exif_bytes)
 
 def save_annotated_image(image_path, detections=None, destination_folder=None, logo_path="presentation/logo.png"):
-    """
-    Saves an annotated image with a logo overlay and metadata.
-    """
     image = cv2.imread(image_path)
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     if detections:
@@ -270,7 +267,7 @@ def save_annotated_image(image_path, detections=None, destination_folder=None, l
     image_width, image_height = pil_image.size
     logo_position = (image_width - logo.width - margin, image_height - logo.height - margin)
     pil_image.paste(logo, logo_position, logo)
-    exif_data = pil_image._getexif()
+    exif_data = pil_image.getexif()  # Updated call
     if exif_data:
         exif = {ExifTags.TAGS.get(tag, tag): value for tag, value in exif_data.items()}
     else:
