@@ -17,6 +17,10 @@ import piexif
 import cv2
 from PIL import Image, ImageDraw, ImageFont, ExifTags
 
+import sys
+import os
+# Append the project root folder (one level up from the utils folder)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # ensure lego_cli.py is in the PYTHONPATH
 sys.path.append(os.path.join(os.getcwd(), "notebooks/LEGO_Bricks_ML_Vision"))
