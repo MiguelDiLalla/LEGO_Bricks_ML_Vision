@@ -3,6 +3,7 @@ import subprocess
 import logging
 import os
 import shutil
+import sys
 from train import get_repo_root
 
 class EmojiFormatter(logging.Formatter):
@@ -105,7 +106,7 @@ def infer(images, mode, batch_size, save_annotated, plt_annotated, export_result
     """Run inference workflows defined in model_utils."""
     logging.info("Running inference workflows...")
     command = [
-        "python3",
+        sys.executable,  # Use current interpreter
         "model_utils.py",
         "--images"
     ]
