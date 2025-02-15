@@ -1,0 +1,36 @@
+{
+  "version": "5.2.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "Stud",
+      "points": [
+        [
+          41.37643020594965,
+          24.66018306636156
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    },
+    {
+      "label": "Stud",
+      "points": [
+        [
+          76.27345537757436,
+          18.252860411899313
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    }
+  ],
+  "imagePath": "image_180_LegoBrick_2_c82.jpg",
+  "imageData": null,
+  "imageHeight": 69,
+  "imageWidth": 99
+}

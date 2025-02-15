@@ -1,0 +1,36 @@
+{
+  "version": "5.2.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "Stud",
+      "points": [
+        [
+          21.7,
+          42.0
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    },
+    {
+      "label": "Stud",
+      "points": [
+        [
+          14.2,
+          20.1
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    }
+  ],
+  "imagePath": "image_87_LegoBrick_4_c72.jpg",
+  "imageData": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAA6ADEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwCzcTBQc4FZdxehM4YetUtSvWjcoTgjNYc1zJKMjIrro4bmV2YVsSoOyNmTVhGvJ61FFrqpOCW6npXPPKHO0khhVdmIfOOpq6mGilYypYhtnptpqSyorBvyrThm3c561w2gXeYTEeoPBrqbW47E9K86ceVnoxfMrmzvoqp9pSikM5PX7YZLBeDzXPkjZiu21WHzYG44x1rjLiPy2I9K9fBVOaNmeTjqfLPmRnOmJs5pswqzxuyVNMnUMpIFdU43Ry05WkSaRdmCfB6Guvgm/iB61wCNsYfWuy06US2i468V4+JhZ3PZoSurGt5z0VX2t60VyHTym28auuPbFcZrtuIrksOhrtlIxWF4gti8eQvFdeEqcs0mc2Lp89PTc41lJ71WMm1yh71ddCCc9RVWSEvICBXtS2PDje5WkUhvat7QbjJMRNZj27MBxVnToZoLlGA+UnvXnYlKx6WHbudVuNFM81/aivPsd/MzoVHzg54qO+txcRlM9uBVgdqc3Skny2aLavdM4m40t1nYEdPakGllTu2nFdRcAZbioD/qz9a6niJ2OVYWF7mImn8bsZFalpp8ZQZUDFTp/qG+tWrfpWUqjluaqmo7Ef2OP2/KitDA9KKzKP/Z",
+  "imageHeight": 58,
+  "imageWidth": 49
+}

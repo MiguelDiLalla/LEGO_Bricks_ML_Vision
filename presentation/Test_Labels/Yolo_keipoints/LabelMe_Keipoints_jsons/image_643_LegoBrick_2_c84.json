@@ -1,0 +1,114 @@
+{
+  "version": "5.2.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "Stud",
+      "points": [
+        [
+          69.23076923076924,
+          22.307692307692307
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    },
+    {
+      "label": "Stud",
+      "points": [
+        [
+          54.23076923076924,
+          35.38461538461539
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    },
+    {
+      "label": "Stud",
+      "points": [
+        [
+          40.12820512820513,
+          47.69230769230769
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    },
+    {
+      "label": "Stud",
+      "points": [
+        [
+          26.66666666666667,
+          59.871794871794876
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    },
+    {
+      "label": "Stud",
+      "points": [
+        [
+          57.30769230769231,
+          10.384615384615385
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    },
+    {
+      "label": "Stud",
+      "points": [
+        [
+          42.17948717948718,
+          23.076923076923077
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    },
+    {
+      "label": "Stud",
+      "points": [
+        [
+          29.230769230769234,
+          36.282051282051285
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    },
+    {
+      "label": "Stud",
+      "points": [
+        [
+          14.35897435897436,
+          48.46153846153846
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    }
+  ],
+  "imagePath": "image_643_LegoBrick_2_c84.jpg",
+  "imageData": null,
+  "imageHeight": 90,
+  "imageWidth": 90
+}

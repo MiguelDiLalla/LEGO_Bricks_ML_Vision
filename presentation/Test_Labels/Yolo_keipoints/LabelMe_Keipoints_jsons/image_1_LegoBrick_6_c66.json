@@ -1,0 +1,36 @@
+{
+  "version": "5.2.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "Stud",
+      "points": [
+        [
+          14.400000000000002,
+          11.9
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    },
+    {
+      "label": "Stud",
+      "points": [
+        [
+          12.599999999999998,
+          26.4
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    }
+  ],
+  "imagePath": "image_1_LegoBrick_6_c66.jpg",
+  "imageData": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAuACMDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDWMqxt1ABpRZS3L+ZGCPesNpZHuFU5IJFdzYmOSOONMDgZrSnDmIrVOQyF0iYsDI5xUl7YNaKrKSwI5roLnywY41OW71l6/MY7JUU8k9a2nSjGNzClXlKdmYvXsKKqqsu0fM1FcZ6BHpkLXN8i9dvWutS1ZXwoIOOornNB3Q3ksmCRiuvtJowu9jk+ldlBWjc83FO8rFe3jb7Sd38IrL8RO5ljRSDgcit2E+ZI74wCa5fVZllvJCDyDgVVaVoiwsffKStJtHymikWdlUDPSiuE9O7NHQEXyZA5+cnOPatklIx2H1rFWLyDujOG9azbu5mZy7ysQOwrohUUY2OSdDnlc6R9btbXKGQFvQVg+bHcs7PgFmNYwkBnLOCT7VO+RtZCQayqVXPQ3p0FT1LbWY3HDGioFu5lUDIorK5rY//Z",
+  "imageHeight": 46,
+  "imageWidth": 35
+}

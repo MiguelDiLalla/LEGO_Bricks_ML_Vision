@@ -1,0 +1,114 @@
+{
+  "version": "5.2.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "Stud",
+      "points": [
+        [
+          44.54488330341113,
+          46.48294434470377
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    },
+    {
+      "label": "Stud",
+      "points": [
+        [
+          52.08527827648115,
+          19.373429084380614
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    },
+    {
+      "label": "Stud",
+      "points": [
+        [
+          77.39946140035906,
+          36.96768402154399
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    },
+    {
+      "label": "Stud",
+      "points": [
+        [
+          70.75673249551167,
+          62.461400359066424
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    },
+    {
+      "label": "Stud",
+      "points": [
+        [
+          99.84111310592459,
+          51.50987432675045
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    },
+    {
+      "label": "Stud",
+      "points": [
+        [
+          94.81418312387791,
+          78.26032315978456
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    },
+    {
+      "label": "Stud",
+      "points": [
+        [
+          124.79622980251347,
+          64.97486535008976
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    },
+    {
+      "label": "Stud",
+      "points": [
+        [
+          116.53770197486534,
+          91.54578096947935
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    }
+  ],
+  "imagePath": "image_10_LegoBrick_0_c87.jpg",
+  "imageData": "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",
+  "imageHeight": 126,
+  "imageWidth": 139
+}

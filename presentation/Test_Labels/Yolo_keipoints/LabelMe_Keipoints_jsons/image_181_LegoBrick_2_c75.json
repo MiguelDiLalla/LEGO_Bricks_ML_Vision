@@ -1,0 +1,23 @@
+{
+  "version": "5.2.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "Stud",
+      "points": [
+        [
+          24.499999999999996,
+          15.799999999999999
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    }
+  ],
+  "imagePath": "image_181_LegoBrick_2_c75.jpg",
+  "imageData": null,
+  "imageHeight": 55,
+  "imageWidth": 47
+}

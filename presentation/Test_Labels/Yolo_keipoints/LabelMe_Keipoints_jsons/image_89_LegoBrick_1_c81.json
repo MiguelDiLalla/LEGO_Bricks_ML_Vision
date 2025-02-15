@@ -1,0 +1,75 @@
+{
+  "version": "5.2.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "Stud",
+      "points": [
+        [
+          15.49781659388647,
+          134.79694323144105
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    },
+    {
+      "label": "Stud",
+      "points": [
+        [
+          22.04803493449782,
+          117.5480349344978
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    },
+    {
+      "label": "Stud",
+      "points": [
+        [
+          30.56331877729258,
+          77.59170305676855
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    },
+    {
+      "label": "Stud",
+      "points": [
+        [
+          35.366812227074234,
+          55.10262008733625
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    },
+    {
+      "label": "Stud",
+      "points": [
+        [
+          39.29694323144105,
+          35.888646288209614
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "point",
+      "flags": {}
+    }
+  ],
+  "imagePath": "image_89_LegoBrick_1_c81.jpg",
+  "imageData": "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",
+  "imageHeight": 153,
+  "imageWidth": 62
+}
