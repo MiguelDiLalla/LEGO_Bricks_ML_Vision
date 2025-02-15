@@ -16,8 +16,12 @@ from ultralytics import YOLO
 import piexif
 import cv2
 from PIL import Image, ImageDraw, ImageFont, ExifTags
-from lego_cli import EmojiFormatter  # ensure lego_cli.py is in the PYTHONPATH
 
+
+# ensure lego_cli.py is in the PYTHONPATH
+sys.path.append(os.path.join(os.getcwd(), "notebooks/LEGO_Bricks_ML_Vision"))
+
+from lego_cli import EmojiFormatter  # Import the custom EmojiFormatter class from lego_cli.py
 
 # Setup logging
 logging.basicConfig(
