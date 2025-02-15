@@ -641,6 +641,8 @@ def parse_args():
                         help="Number of training epochs")
     parser.add_argument("--batch-size", type=int, default=16, 
                         help="Batch size for training")
+    parser.add_argument("--show-results", type=bool, default=True,
+                        help="Display results after training")
     parser.add_argument("--cleanup", type=bool, default=True,
                         help="Remove cached datasets, logs and results folder after training")
     parser.add_argument("--force-extract", action="store_true", 
@@ -648,7 +650,13 @@ def parse_args():
     parser.add_argument("--use-pretrained", action="store_true", 
                         help="Use LEGO-trained model instead of YOLOv8n")
     
-    return parser.parse_args()
+    args = parser.parse_args()
+
+
+    args.cleanup = bool(args.cleanup)
+    args.show_results = bool(args.show_results)
+
+    return args
 
 # Main execution
 
@@ -698,7 +706,9 @@ def main():
     logging.info("✅ Training results have been zipped and are ready for download at the link above.")
     
     # Display last training session
-    display_last_training_session()
+    if args.show_results:
+        logging.info("📊 Displaying contents of the last training session...")
+        display_last_training_session()
 
     # Clean up everything
     if args.cleanup:
