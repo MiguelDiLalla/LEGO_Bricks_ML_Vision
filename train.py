@@ -563,10 +563,14 @@ def display_last_training_session(results_dir=None):
         logging.error(f"Results directory not found: {results_dir}")
         return
 
-    # Get all training session directories sorted by modification time (most recent first)
+    # Get all training session directories that follow the 'training_YYYYMMDD_HHMMSS' pattern sorted by session time (most recent first)
     session_dirs = sorted(
-        [d for d in os.listdir(results_dir) if os.path.isdir(os.path.join(results_dir, d))],
-        key=lambda d: os.path.getmtime(os.path.join(results_dir, d)),
+        [
+            d for d in os.listdir(results_dir)
+            if os.path.isdir(os.path.join(results_dir, d)) and d.startswith("training_")
+            and len(d.split("_")) == 3  # Ensures correct naming format
+        ],
+        key=lambda d: datetime.strptime(d.split("training_")[1], "%Y%m%d_%H%M%S"),
         reverse=True
     )
 
