@@ -40,32 +40,24 @@ for handler in logger.handlers:
 def load_model(mode):
     """
     Loads the YOLO model based on the selected mode.
-
-    Args:
-        mode (str): Mode of operation. Allowed values are "bricks" or "studs".
-
-    Returns:
-        YOLO: The loaded YOLO model instance.
-
-    Raises:
-        ValueError: If an unsupported mode is provided.
-        FileNotFoundError: If the model file does not exist.
     """
+    # Treat 'classify' mode as 'bricks' for model loading.
+    if mode == "classify":
+        mode = "bricks"
+
     model_paths = {
         "bricks": "presentation/Models_DEMO/Brick_Model_best20250123_192838t.pt",
         "studs": "presentation/Models_DEMO/Stud_Model_best20250124_170824.pt"
     }
     
     if mode not in model_paths:
-        logging.error(f"Invalid mode '{mode}'. Use 'bricks' or 'studs'.")
         raise ValueError(f"Invalid mode '{mode}'. Choose from 'bricks' or 'studs'.")
-
+    
     model_path = model_paths[mode]
     
     if not os.path.exists(model_path):
-        logging.error(f"Model file not found: {model_path}")
         raise FileNotFoundError(f"Model file not found: {model_path}")
-
+    
     logging.info(f"🔹 Loading model: {model_path}")
     return YOLO(model_path)
 
