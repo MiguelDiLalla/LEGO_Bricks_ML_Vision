@@ -473,7 +473,7 @@ def train_model(dataset_path, model_path, device, epochs, batch_size):
     subprocess.run(command, check=True)
     
     logging.info("✅ Training completed.")
-    return results_dir
+    return os.path.join(results_dir, training_name)
 
 # Export logs
 
@@ -546,88 +546,59 @@ def zip_and_download_results(results_dir=None, output_filename=None):
     # Provide a direct download link
     display(FileLink(zip_path))
 
-def display_last_training_session(results_dir=None):
+def display_last_training_session(session_dir):
     """
-    Finds the latest training session and displays all images and text files
-    in an ordered, user-friendly manner.
+    Displays all files from the specified training session directory.
     
     Args:
-        results_dir (str): The path where training results are stored.
-                           Defaults to "<repo_root>/cache/results".
+        session_dir (str): Path to the training session folder.
     """
-    # Use the repository root to determine the default results directory
-    if results_dir is None:
-        results_dir = os.path.join(get_repo_root(), "cache", "results")
-
-    if not os.path.exists(results_dir):
-        logging.error(f"Results directory not found: {results_dir}")
+    if not os.path.exists(session_dir):
+        logging.error(f"Results directory not found: {session_dir}")
         return
 
-    # Get all training session directories that follow the 'training_YYYYMMDD_HHMMSS' pattern sorted by session time (most recent first)
-    session_dirs = sorted(
-        [
-            d for d in os.listdir(results_dir)
-            if os.path.isdir(os.path.join(results_dir, d)) and d.startswith("training_")
-            and len(d.split("_")) == 3  # Ensures correct naming format
-        ],
-        key=lambda d: datetime.strptime(d.split("training_")[1], "%Y%m%d_%H%M%S"),
-        reverse=True
-    )
-
-    if not session_dirs:
-        logging.error("❌ No training sessions found in results.")
-        return
-
-    # Get the latest training session directory
-    latest_session = os.path.join(results_dir, session_dirs[0])
-    logging.info(f"📂 Displaying contents of latest training session: {latest_session}")
-
-    # List all files in the session directory
-    files = sorted(os.listdir(latest_session))
-    
-    # Ensure required modules are imported
+    logging.info(f"Displaying training session: {session_dir}")
+    files = sorted(os.listdir(session_dir))
     import matplotlib.pyplot as plt
 
     for file in files:
-        file_path = os.path.join(latest_session, file)
-        
+        file_path = os.path.join(session_dir, file)
         if file.lower().endswith((".jpg", ".png")):
-            logging.info(f"🖼️  {file} (image)")
+            logging.info(f"🖼️  Displaying image: {file}")
             image = cv2.imread(file_path)
             if image is None:
                 logging.warning(f"Unable to load image: {file_path}")
                 continue
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            plt.figure(figsize=(15, 15))
+            plt.figure(figsize=(10, 10))
             plt.imshow(image)
             plt.axis("off")
             plt.show()
 
         elif file.lower().endswith(".txt"):
-            logging.info(f"📄 {file} (text file)")
+            logging.info(f"📄 Displaying text file: {file}")
             with open(file_path, 'r') as f:
-                content = f.read()
-                pprint(content)
+                print(f.read())
 
         elif file.lower().endswith(".csv"):
-            logging.info(f"📄 {file} (CSV file)")
+            logging.info(f"📄 Displaying CSV file: {file}")
             try:
                 df = pd.read_csv(file_path)
                 display(df)
             except Exception as e:
-                logging.error(f"Error displaying CSV file {file}: {e}")
+                logging.error(f"Error reading CSV file {file}: {e}")
 
         elif file.lower().endswith(".yaml"):
-            logging.info(f"📄 {file} (YAML file)")
+            logging.info(f"📄 Displaying YAML file: {file}")
             try:
                 with open(file_path, 'r') as f:
                     content = yaml.safe_load(f)
                 pprint(content)
             except Exception as e:
-                logging.error(f"Error displaying YAML file {file}: {e}")
+                logging.error(f"Error reading YAML file {file}: {e}")
 
         else:
-            logging.info(f"📄 {file} (non-image file)")
+            logging.info(f"📄 Skipping unsupported file type: {file}")
 
     logging.info("✅ Done displaying training session contents.")
 
@@ -699,12 +670,11 @@ def main():
     
     output_dir = os.path.join(get_repo_root(), "cache", "results")
     os.makedirs(output_dir, exist_ok=True)
-    train_model(dataset_yolo_path, model_path, device, args.epochs, args.batch_size)
+    SessionResults = train_model(dataset_yolo_path, model_path, device, args.epochs, args.batch_size)
     
     # Export logs once with correct parameter name
     export_logs()
     
-    logging.shutdown()  # Ensure all log messages are flushed to file
     # Zip and download results
     zip_and_download_results()
     logging.info("✅ Training results have been zipped and are ready for download at the link above.")
@@ -712,7 +682,7 @@ def main():
     # Display last training session
     if args.show_results:
         logging.info("📊 Displaying contents of the last training session...")
-        display_last_training_session()
+        display_last_training_session(SessionResults)
 
     # Clean up everything
     if args.cleanup:
