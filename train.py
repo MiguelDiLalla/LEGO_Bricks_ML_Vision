@@ -592,7 +592,7 @@ def display_last_training_session(session_dir):
         elif file.lower().endswith(".yaml"):
             logging.info(f"📄 Displaying YAML file: {file}")
             try:
-                with open(file_path, 'r') as f):
+                with open(file_path, 'r') as f:
                     content = yaml.safe_load(f)
                 pprint(content)
             except Exception as e:
