@@ -35,6 +35,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger()
 for handler in logger.handlers:
+    pass
+    pass
     handler.setFormatter(EmojiFormatter("%(asctime)s - %(levelname)s - %(message)s"))
 
 def load_model(mode):
@@ -60,7 +62,6 @@ def load_model(mode):
     
     logging.info(f"🔹 Loading model: {model_path}")
     return YOLO(model_path)
-
 def apply_nms(detections, overlap_threshold):
     """
     Applies Non-Maximum Suppression (NMS) to filter overlapping bounding boxes.
@@ -74,8 +75,9 @@ def apply_nms(detections, overlap_threshold):
     """
     if not detections:
         return []
-
     # Convert to NumPy array for easier calculations
+    boxes = np.array([det["bbox"] for det in detections])
+
     boxes = np.array([det["bbox"] for det in detections])
     scores = np.array([det["confidence"] for det in detections])
 
@@ -725,6 +727,7 @@ def main():
     if args.export_results:
         # Uncomment the next line if you wish to zip the results folder
         # zip_results(results_folder)
+
 
 if __name__ == "__main__":
     main()
