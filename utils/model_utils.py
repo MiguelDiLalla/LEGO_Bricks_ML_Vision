@@ -334,9 +334,10 @@ def detect_and_classify(image_paths, model_bricks, model_studs, confidence_thres
 
     return results
 
-def draw_bboxes(image, detections, with_labels=True, box_color=(0, 255, 0), text_color=(255, 255, 255), thickness=2, font_scale=0.5):
+def draw_bboxes(image, detections, with_labels=True, box_color=(0, 255, 0), text_color=(255, 255, 255)):
     """
-    Draws bounding boxes with optional labels on an image.
+    Draws bounding boxes with optional labels on an image. The thickness and font scale
+    are determined dynamically based on the image dimensions.
 
     Args:
         image (numpy.ndarray): The input image on which to draw.
@@ -345,21 +346,24 @@ def draw_bboxes(image, detections, with_labels=True, box_color=(0, 255, 0), text
         with_labels (bool): If True, labels the boxes with dimension and confidence.
         box_color (tuple): Color of the bounding box in BGR format.
         text_color (tuple): Color of the text in BGR format.
-        thickness (int): Thickness of the bounding box lines.
-        font_scale (float): Scale of the font for labels.
 
     Returns:
         numpy.ndarray: The image with drawn bounding boxes.
     """
+    h, w = image.shape[:2]
+    # Dynamically determine thickness and font_scale based on image dimensions
+    dynamic_thickness = max(1, int(round(min(h, w) / 500)))
+    dynamic_font_scale = max(0.5, min(h, w) / 1000)
+
     for det in detections:
         x1, y1, x2, y2 = det['bbox']
-        cv2.rectangle(image, (x1, y1), (x2, y2), box_color, thickness)
+        cv2.rectangle(image, (x1, y1), (x2, y2), box_color, dynamic_thickness)
 
         if with_labels:
             label = f"{det['dimension']} ({det['confidence']:.2f})"
-            (w, h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)
-            cv2.rectangle(image, (x1, y1 - h - 5), (x1 + w, y1), box_color, -1)
-            cv2.putText(image, label, (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, font_scale, text_color, thickness)
+            (w_box, h_box), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, dynamic_font_scale, dynamic_thickness)
+            cv2.rectangle(image, (x1, y1 - h_box - 5), (x1 + w_box, y1), box_color, -1)
+            cv2.putText(image, label, (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, dynamic_font_scale, text_color, dynamic_thickness)
 
     return image
 

@@ -55,7 +55,7 @@ def cli():
 @click.option("--use-pretrained", is_flag=True, help="Use LEGO-trained model")
 @click.option("--cleanup/--no-cleanup", default=True, help="Remove cached datasets, logs and results after training")
 @click.option("--force-extract", is_flag=True, help="Force re-extraction of dataset")
-@click.option("--show-results/--no-show-results", default=True, help="Display results after training")
+@click.option("--show-results", is_flag=True, default=True, help="Display results after training")
 def train(mode, epochs, batch_size, use_pretrained, cleanup, force_extract, show_results):
     """Train a YOLO model."""
     logging.info("Starting training...")
@@ -92,6 +92,35 @@ def predict(image, save_annotated, output):
         command.append("--save-annotated")
     if output:
         command.extend(["--output", output])
+    subprocess.run(command)
+
+@click.command()
+@click.option("--images", type=str, multiple=True, required=True, help="Paths to input images")
+@click.option("--mode", type=click.Choice(["bricks", "studs", "classify"]), required=True, help="Workflow mode")
+@click.option("--batch-size", type=int, default=8, help="Number of images per batch")
+@click.option("--save-annotated", is_flag=True, help="Save annotated images")
+@click.option("--plt-annotated", is_flag=True, help="Display annotated images")
+@click.option("--export-results", is_flag=True, help="Export results as zip")
+def infer(images, mode, batch_size, save_annotated, plt_annotated, export_results):
+    """Run inference workflows defined in model_utils."""
+    logging.info("Running inference workflows...")
+    command = [
+        "python3",
+        "model_utils.py",
+        "--images"
+    ]
+    for img in images:
+        command.append(img)
+    command.extend([
+        "--mode", mode,
+        "--batch-size", str(batch_size)
+    ])
+    if save_annotated:
+        command.append("--save-annotated")
+    if plt_annotated:
+        command.append("--plt-annotated")
+    if export_results:
+        command.append("--export-results")
     subprocess.run(command)
 
 @click.command()
@@ -133,6 +162,7 @@ cli.add_command(train)
 cli.add_command(predict)
 cli.add_command(cleanup)
 cli.add_command(data_processing)
+cli.add_command(infer)
 
 if __name__ == "__main__":
     cli()
