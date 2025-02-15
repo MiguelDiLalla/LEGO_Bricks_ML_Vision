@@ -327,7 +327,9 @@ def compose_final_image(image_path, detections, logo_path="presentation/logo.png
     text_color = (255, 255, 255)
     for line in metadata_str.splitlines():
         draw_obj.text((text_x, text_y), line, font=font, fill=text_color)
-        text_y += font.getsize(line)[1] + 2
+        bbox = font.getbbox(line)    # get the bounding box for the text
+        line_height = bbox[3] - bbox[1]
+        text_y += line_height + 2
     if os.path.exists(logo_path):
         logo = Image.open(logo_path).convert("RGBA")
         desired_logo_width = frame_width * 0.3
