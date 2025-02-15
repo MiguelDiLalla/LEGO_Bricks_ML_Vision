@@ -97,31 +97,32 @@ def predict(image, save_annotated, output):
 
 @click.command()
 @click.option("--images", type=str, multiple=True, required=True, help="Paths to input images")
-@click.option("--mode", type=click.Choice(["bricks", "studs", "classify"]), required=True, help="Workflow mode")
-@click.option("--batch-size", type=int, default=8, help="Number of images per batch")
-@click.option("--save-annotated", is_flag=True, help="Save annotated images")
-@click.option("--plt-annotated", is_flag=True, help="Display annotated images")
+@click.option("--pipeline", type=click.Choice(["default", "detect_classify"]), default="detect_classify", help="Processing pipeline to use")
+@click.option("--classification-method", type=click.Choice(["stud_count", "stud_positions"]), default="stud_count", help="Classification method")
+@click.option("--confidence", type=float, default=0.5, help="Confidence threshold for detections")
+@click.option("--overlap", type=float, default=0.5, help="Overlap threshold for NMS")
+@click.option("--user-comment", type=str, help="User comment to add to image metadata")
 @click.option("--export-results", is_flag=True, help="Export results as zip")
-def infer(images, mode, batch_size, save_annotated, plt_annotated, export_results):
+def infer(images, pipeline, classification_method, confidence, overlap, user_comment, export_results):
     """Run inference workflows defined in model_utils."""
     logging.info("Running inference workflows...")
     command = [
         sys.executable,
-        "utils/model_utils.py",  # Updated file path
+        "utils/model_utils.py",
         "--images"
     ]
+    # Append image paths
     for img in images:
         command.append(img)
-    command.extend([
-        "--mode", mode,
-        "--batch-size", str(batch_size)
-    ])
-    if save_annotated:
-        command.append("--save-annotated")
-    if plt_annotated:
-        command.append("--plt-annotated")
+    # Append parameters required by model_utils.py
+    command.extend(["--pipeline", pipeline])
+    command.extend(["--classification_method", classification_method])
+    command.extend(["--confidence", str(confidence)])
+    command.extend(["--overlap", str(overlap)])
+    if user_comment:
+        command.extend(["--user_comment", user_comment])
     if export_results:
-        command.append("--export-results")
+        command.append("--export_results")
     subprocess.run(command)
 
 @click.command()
