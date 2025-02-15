@@ -726,8 +726,8 @@ def main():
     # Zip results if requested
     if args.export_results:
         # Uncomment the next line if you wish to zip the results folder
-        # zip_results(results_folder)
+        zip_results(results_folder)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  
     main()
