@@ -302,54 +302,86 @@ def compose_final_image(image_path, detections, logo_path="presentation/logo.png
     """
     Composes a final image with the annotated image on the left and a red frame with metadata on the right.
     """
+    # Ensure the output folder exists
     os.makedirs(output_folder, exist_ok=True)
+    
+    # Read the original image using OpenCV
     original_cv = cv2.imread(image_path)
     if original_cv is None:
         logging.error(f"Unable to load image: {image_path}")
         return None
+    
+    # Draw bounding boxes on a copy of the original image to create the annotated version
     annotated_cv = draw_bboxes(original_cv.copy(), detections, with_labels=True)
+    # Convert the annotated OpenCV image (BGR format) to a PIL image (RGB format)
     annotated_img = Image.fromarray(cv2.cvtColor(annotated_cv, cv2.COLOR_BGR2RGB))
+    
+    # Get dimensions of the annotated image
     orig_width, orig_height = annotated_img.size
+    # Define the width of the red metadata frame as half the width of the original image
     frame_width = orig_width // 2
+    # Total width for the new image includes original image plus the metadata frame
     new_width = orig_width + frame_width
+    # Create a new image with a red background for the metadata frame
     new_image = Image.new("RGB", (new_width, orig_height), (255, 0, 0))
+    
+    # Paste the annotated image on the left side of the new image
     new_image.paste(annotated_img, (0, 0))
+    
+    # Open the original image using PIL to access its EXIF metadata
     pil_img = Image.open(image_path)
     exif_data = pil_img._getexif()
     metadata_str = ""
+    
+    # If EXIF metadata exists, format it line by line; otherwise, note that no metadata was found
     if exif_data:
         for tag_id, value in exif_data.items():
             tag = ExifTags.TAGS.get(tag_id, tag_id)
             metadata_str += f"{tag}: {value}\n"
     else:
         metadata_str = "No metadata found."
+    
+    # Prepare to draw text (metadata) on the new image
     draw_obj = ImageDraw.Draw(new_image)
     try:
+        # Try loading a monospaced font
         font = ImageFont.truetype("consola.ttf", size=14)
     except Exception:
+        # Fallback to default font if loading fails
         font = ImageFont.load_default()
+    
+    # Set initial text position for metadata in the red frame
     text_x = orig_width + 10
     text_y = 10
-    text_color = (255, 255, 255)
+    text_color = (255, 255, 255)  # White text
+    
+    # Write each line of metadata; adjust y-coordinate by the height of the text line plus spacing
     for line in metadata_str.splitlines():
         draw_obj.text((text_x, text_y), line, font=font, fill=text_color)
-        bbox = font.getbbox(line)    # get the bounding box for the text
+        bbox = font.getbbox(line)    # Get the bounding box for the text line
         line_height = bbox[3] - bbox[1]
-        text_y += line_height + 2
+        text_y += line_height + 2  # Increment y position for next line with spacing
+    
+    # Check if the logo file exists and resize it if available
     if os.path.exists(logo_path):
         logo = Image.open(logo_path).convert("RGBA")
-        desired_logo_width = frame_width * 0.3
+        desired_logo_width = frame_width * 0.3  # Set logo width as 30% of the frame width
         logo_ratio = logo.height / logo.width
         new_logo_size = (int(desired_logo_width), int(desired_logo_width * logo_ratio))
+        # Resize the logo with high-quality resampling
         logo = logo.resize(new_logo_size, Image.LANCZOS)
         margin = 10
+        # Position the logo at the bottom-right of the metadata frame
         logo_x = orig_width + frame_width - new_logo_size[0] - margin
         logo_y = orig_height - new_logo_size[1] - margin
         new_image.paste(logo, (logo_x, logo_y), logo)
     else:
         logging.warning(f"Logo file not found at {logo_path}")
+    
+    # Determine the output file path based on the original image's filename
     output_filename = os.path.basename(image_path)
     output_path = os.path.join(output_folder, output_filename)
+    # Save the composed image to the output folder
     new_image.save(output_path)
     logging.info(f"Final composed image saved to: {output_path}")
     return output_path
