@@ -36,8 +36,9 @@ STUD_TO_DIMENSION_MAP = {
     16: "8x2",
 }
 # Project repo:
-REPO_URL = r"https://api.github.com/repos/MiguelDiLalla/LEGO_Bricks_ML_Vision/contents/"
-
+userGithub = "MiguelDiLalla"
+repoGithub = "LEGO_Bricks_ML_Vision"
+REPO_URL = f"https://api.github.com/repos/{userGithub}/{repoGithub}/contents/"
 
 # models paths
 MODELS_PATHS = {
@@ -52,12 +53,15 @@ GITHUB_URLS = {
 }
 
 def load_models(urls=GITHUB_URLS):
-    """
-    Loads YOLO models from fixed GitHub URLs.
-    Returns:
-        dict: {'bricks': YOLO_model, 'studs': YOLO_model}
-    """
+    '''
+    Load bricks model and studs model from fixed github URLs.
+    return a dictionary with the Yolo models ready to use
+    '''
+    
     import tempfile
+    import requests
+    from ultralytics import YOLO
+
     models = {}
     headers = {'Accept': 'application/vnd.github.v3.raw'}
     for key, url in urls.items():
@@ -68,23 +72,39 @@ def load_models(urls=GITHUB_URLS):
             tmp.flush()
             temp_filepath = tmp.name
         model = YOLO(temp_filepath)
-        models[key] = model  # assign only once
+        models[key] = model
+        models[key] = model
+        models[key] = model
     return models
 
+import json
+import piexif
+import numpy as np
 def write_metadata_to_exif(enriched_results=None):
     """
-    Writes a JSON string (from enriched_results) into the image's EXIF UserComment tag.
-    Skips non-serializable data (like numpy arrays).
+    Given the enriched results dictionary and the path to the original image file,
+    this function writes inference metadata into the image's EXIF UserComment tag.
+    
+    If the file already stores our metadata, the function will update the
+    "TimesScanned" key (incrementing it) while merging new metadata from enriched_results.
+    
+    Any non-serializable components (like numpy arrays) are skipped.
+    The metadata is stored as a JSON string.
+    Repository: https://github.com/MiguelDiLalla/LEGO_Bricks_ML_Vision
     """
-    if not enriched_results or not enriched_results.get("path"):
+    if enriched_results is None:
         return
-    image_path = enriched_results["path"]
-    if not os.path.isfile(image_path) or not image_path.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif')):
-        print("Image path is invalid or unsupported.")
+    if enriched_results.get("path") is None:
+        return
+    image_path = enriched_results.get("path")
+    if not image_path or not os.path.isfile(image_path) or not image_path.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif')):
+        print("The image path is invalid or the file is not a supported image format.")
         return
 
+    # Build a serializable dictionary from enriched_results (skip numpy arrays)
     meta_to_store = {}
     for key, value in enriched_results.items():
+        # Check for numpy arrays by the presence of tolist()
         if hasattr(value, "tolist"):
             continue
         try:
@@ -93,6 +113,7 @@ def write_metadata_to_exif(enriched_results=None):
         except Exception:
             meta_to_store[key] = str(value)
     
+    # Try to load the current EXIF data
     try:
         exif_dict = piexif.load(image_path)
     except Exception as e:
@@ -103,27 +124,40 @@ def write_metadata_to_exif(enriched_results=None):
     existing_comment = exif_dict.get("Exif", {}).get(user_comment_tag, b'')
     if existing_comment:
         try:
-            decoded = existing_comment.decode('utf-8', errors='ignore').strip('\x00')
-            existing_meta = json.loads(decoded)
+            decoded_comment = existing_comment.decode('utf-8', errors='ignore').strip('\x00')
+            existing_meta = json.loads(decoded_comment)
         except Exception:
             existing_meta = {}
     else:
         existing_meta = {}
 
-    existing_meta["TimesScanned"] = int(existing_meta.get("TimesScanned", 0)) + 1
+    # Update or set the "TimesScanned" key
+    if "TimesScanned" in existing_meta:
+        try:
+            existing_meta["TimesScanned"] = int(existing_meta["TimesScanned"]) + 1
+        except Exception:
+            existing_meta["TimesScanned"] = 1
+    else:
+        existing_meta["TimesScanned"] = 1
+    
+    # Merge new metadata with the existing metadata (existing_meta takes precedence for TimesScanned)
     meta_to_store.update(existing_meta)
+    # Add repository information
     meta_to_store["Repository"] = "https://github.com/MiguelDiLalla/LEGO_Bricks_ML_Vision"
 
-    metadata_json = json.dumps(meta_to_store, indent=4)
-    user_comment_bytes = metadata_json.encode('utf-8')
+    # Convert metadata to JSON string and encode to bytes (UserComment expects bytes)
+    metadata_json_str = json.dumps(meta_to_store, indent=4)
+    user_comment_bytes = metadata_json_str.encode('utf-8')
+
+    # Ensure the Exif section exists and update UserComment tag
     if "Exif" not in exif_dict:
         exif_dict["Exif"] = {}
     exif_dict["Exif"][user_comment_tag] = user_comment_bytes
+    # Dump updated exif data and insert it back into the image file
     exif_bytes = piexif.dump(exif_dict)
     piexif.insert(exif_bytes, image_path)
 
-def detect_bricks(model=None, numpy_image=None, working_folder=os.getcwd(),
-                  SAVE_ANNOTATED=False, PLT_ANNOTATED=False, SAVE_JSON=False):
+def detect_bricks(model=None, numpy_image=None, working_folder=os.getcwd(), SAVE_ANNOTATED=False, PLT_ANNOTATED=False, SAVE_JSON=False):
     '''
     Detect bricks in an image using the bricks model.
     
@@ -333,17 +367,24 @@ def download_images_from_url(url):
 test_images = {}
 
 for key, url in TEST_IMAGES_URLS.items():
+    print()
     test_images[key] = download_images_from_url(url)
 
-# load project logo
 
+LOGO_IMAGE_PATH = "presentation/logo.png"
+LOGO_IMAGE_URL = os.path.join(REPO_URL, LOGO_IMAGE_PATH)
 import requests
-from PIL import Image
 from io import BytesIO
-
-# Use the raw file URL
-LOGO_IMAGE_URL = "https://raw.githubusercontent.com/MiguelDiLalla/LEGO_Bricks_ML_Vision/main/presentation/logo.png"
+from PIL import Image
 
 response = requests.get(LOGO_IMAGE_URL)
 response.raise_for_status()
-logo_img = Image.open(BytesIO(response.content))
+# The GitHub API returns a JSON with metadata about the file.
+api_data = response.json()
+download_url = api_data.get("download_url")
+if not download_url:
+	raise ValueError("Download URL not found in API response.")
+raw_response = requests.get(download_url)
+raw_response.raise_for_status()
+logo_img = Image.open(BytesIO(raw_response.content))
+logo_img
