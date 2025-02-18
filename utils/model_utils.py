@@ -84,27 +84,25 @@ def write_metadata_to_exif(enriched_results=None):
     """
     Given the enriched results dictionary and the path to the original image file,
     this function writes inference metadata into the image's EXIF UserComment tag.
-    
     If the file already stores our metadata, the function will update the
     "TimesScanned" key (incrementing it) while merging new metadata from enriched_results.
-    
     Any non-serializable components (like numpy arrays) are skipped.
     The metadata is stored as a JSON string.
     Repository: https://github.com/MiguelDiLalla/LEGO_Bricks_ML_Vision
     """
-    if enriched_results is None:
+    import json, os, piexif
+
+    if enriched_results is None or enriched_results.get("path") is None:
         return
-    if enriched_results.get("path") is None:
-        return
+
     image_path = enriched_results.get("path")
-    if not image_path or not os.path.isfile(image_path) or not image_path.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif')):
+    if not isinstance(image_path, str) or not os.path.isfile(image_path) or not image_path.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif')):
         print("The image path is invalid or the file is not a supported image format.")
         return
 
     # Build a serializable dictionary from enriched_results (skip numpy arrays)
     meta_to_store = {}
     for key, value in enriched_results.items():
-        # Check for numpy arrays by the presence of tolist()
         if hasattr(value, "tolist"):
             continue
         try:
@@ -113,7 +111,7 @@ def write_metadata_to_exif(enriched_results=None):
         except Exception:
             meta_to_store[key] = str(value)
     
-    # Try to load the current EXIF data
+    # Load existing EXIF metadata if available
     try:
         exif_dict = piexif.load(image_path)
     except Exception as e:
@@ -131,29 +129,32 @@ def write_metadata_to_exif(enriched_results=None):
     else:
         existing_meta = {}
 
-    # Update or set the "TimesScanned" key
-    if "TimesScanned" in existing_meta:
-        try:
-            existing_meta["TimesScanned"] = int(existing_meta["TimesScanned"]) + 1
-        except Exception:
-            existing_meta["TimesScanned"] = 1
-    else:
+    # Update or set "TimesScanned"
+    try:
+        existing_meta["TimesScanned"] = int(existing_meta.get("TimesScanned", 0)) + 1
+    except Exception:
         existing_meta["TimesScanned"] = 1
+
+    # If both meta_to_store and existing_meta have a "metadata" key,
+    # Merge new metadata with the existing metadata (if any)
+    if "metadata" in meta_to_store and "metadata" in existing_meta:
+        merged_metadata = existing_meta["metadata"].copy()
+        merged_metadata.update(meta_to_store["metadata"])
+        meta_to_store["metadata"] = merged_metadata
     
-    # Merge new metadata with the existing metadata (existing_meta takes precedence for TimesScanned)
+    # Remove 'metadata' from existing_meta to avoid overwriting the enriched results
+    existing_meta.pop("metadata", None)
+    
+    # Now merge the remaining keys
     meta_to_store.update(existing_meta)
-    # Add repository information
     meta_to_store["Repository"] = "https://github.com/MiguelDiLalla/LEGO_Bricks_ML_Vision"
 
-    # Convert metadata to JSON string and encode to bytes (UserComment expects bytes)
+    # Convert to JSON and insert back into the image's EXIF UserComment tag.
     metadata_json_str = json.dumps(meta_to_store, indent=4)
     user_comment_bytes = metadata_json_str.encode('utf-8')
-
-    # Ensure the Exif section exists and update UserComment tag
     if "Exif" not in exif_dict:
         exif_dict["Exif"] = {}
     exif_dict["Exif"][user_comment_tag] = user_comment_bytes
-    # Dump updated exif data and insert it back into the image file
     exif_bytes = piexif.dump(exif_dict)
     piexif.insert(exif_bytes, image_path)
 
@@ -161,29 +162,16 @@ def detect_bricks(model=None, numpy_image=None, working_folder=os.getcwd(), SAVE
     '''
     Detect bricks in an image using the bricks model.
     
-    returns dictionary with enriched results of the detection. yolo outputs :
-
-      orig_img       numpy.ndarray  La imagen original como un array numpy.
-      orig_shape     tuple          La forma original de la imagen en formato (alto, ancho).
-      boxes          Boxes, optional  Un objeto Boxes que contiene las cajas delimitadoras de la detección.
-      probs          Probs, optional  Un objeto Probs que contiene las probabilidades de cada clase para la tarea de clasificación.
-      obb            OBB, optional  Un objeto OBB que contiene cuadros delimitadores orientados.
-      speed          dict           Un diccionario de velocidades de preprocesamiento, inferencia y postprocesamiento en milisegundos por imagen.
-      names          dict           Un diccionario de nombres de clases.
-      path           str            La ruta al archivo de imagen.
-
-    Además almacenamos los mismos datos en our_results y se añaden las siguientes claves usando las propiedades de la clase de resultados de ultralitycs (https://docs.ultralytics.com/es/modes/predict/):
-
-      - cropped_numpys: dict of numpy arrays with the cropped bricks. Primero se generan imágenes .jpg usando el método save_crop().
-      - annotated_plot: imagen anotada usando el método .plot() del objeto results.
-      - metadata: un diccionario anidado con toda la metadata posible extraída del objeto results acerca del entorno y el modelo.
-
-    La función puede:
-      - Mostrar la imagen anotada con o3-mini .plot()
-      - Guardar imágenes anotadas en la carpeta CWD/results/ con timestamp y nombre simple.
-      - Guardar los resultados enriquecidos a un archivo JSON en la carpeta CWD/results/ con timestamp y nombre simple.
+    returns dictionary with enriched results of the detection. yolo outputs have attributes such as:
+    orig_img, orig_shape, boxes, probs, obb, speed, names, path plus additional 
+    enriched keys (cropped_numpys, annotated_plot, metadata).
     '''
-    # Validación de parámetros
+    import os
+    import cv2
+    import json
+    import datetime
+    import numpy as np
+    import matplotlib.pyplot as plt
 
     image_path = None
 
@@ -194,90 +182,71 @@ def detect_bricks(model=None, numpy_image=None, working_folder=os.getcwd(), SAVE
     if isinstance(numpy_image, str):
         if not os.path.exists(numpy_image):
             raise ValueError(f"La ruta {numpy_image} no es válida.")
+        full_path = os.path.abspath(numpy_image)
         image_from_path = cv2.imread(numpy_image)
         if image_from_path is None:
             raise ValueError("La imagen no se pudo cargar desde la ruta proporcionada.")
-        numpy_image = image_from_path
-        img_path = numpy_image
-    
+        numpy_image = cv2.cvtColor(image_from_path, cv2.COLOR_BGR2RGB)
+        image_path = numpy_image
+
+    numpy_image_rgb = cv2.cvtColor(numpy_image, cv2.COLOR_BGR2RGB)
+
     # Realizar la predicción
-    results = model.predict(numpy_image)
-    
+    results = model.predict(numpy_image_rgb)
+    # Si results es una lista (lo que ocurre en algunas versiones), se usa el primer elemento
+    if isinstance(results, list):
+        results = results[0]
+
     # Inicializar el diccionario de resultados enriquecidos
     enriched_results = {}
     enriched_results["orig_img"] = numpy_image
     enriched_results["orig_shape"] = numpy_image.shape[:2]
-    
-    # Asignar claves básicas si están presentes en results
-    if hasattr(results, 'boxes'):
-        enriched_results["boxes"] = results.boxes
-    if hasattr(results, 'probs'):
-        enriched_results["probs"] = results.probs
-    if hasattr(results, 'obb'):
-        enriched_results["obb"] = results.obb
-    if hasattr(results, 'speed'):
-        enriched_results["speed"] = results.speed
-    if hasattr(results, 'names'):
-        enriched_results["names"] = results.names
-    if hasattr(results, 'path'):
-        enriched_results["path"] = results.path
 
-    # Extraer y guardar los recortes de ladrillos
-    import io
-    import os
-    import cv2
-    import numpy as np
+    # Agregar atributos básicos si existen en results
+    for attr in ["boxes", "speed", "names", "path"]:
+        if hasattr(results, attr):
+            enriched_results[attr] = getattr(results, attr)
 
+    # Extraer y guardar los recortes de ladrillos usando los cuadros (boxes)
     cropped_numpys = {}
+    if hasattr(results, "boxes") and results.boxes is not None and len(results.boxes) > 0:
+        # Se asume que boxes tiene un atributo xyxy con coordenadas
+        # Convirtiendo a lista para iterar
+        try:
+            boxes_conf = results.boxes.xyxy.cpu().numpy().tolist()
+        except Exception:
+            # Fallback en caso de que boxes.xyxy no sea accesible
+            boxes_conf = [box for box in results.boxes]
 
-    # If the model supports save_crop but you want to use in-memory buffers, you would need the API to support bytes output.
-    # Here we assume that the API does not, so we use the fallback manual cropping approach with BytesIO.
-    if hasattr(results, 'save_crop') and True:    # Change False to True if the API supports in-memory bytes output
-        # Example hypothetical API usage:
-        crop_bytes_list = results.save_crop(save_format="bytes")  # This is a hypothetical parameter!
-        for idx, crop_data in enumerate(crop_bytes_list):
-            # Wrap the bytes in a BytesIO object
-            crop_bytes_io = io.BytesIO(crop_data)
-            # Convert the BytesIO buffer to a numpy array and decode the image with OpenCV
-            crop_array = np.frombuffer(crop_bytes_io.getbuffer(), dtype=np.uint8)
-            crop_img = cv2.imdecode(crop_array, cv2.IMREAD_COLOR)
+        for idx, box in enumerate(boxes_conf):
+            x1, y1, x2, y2 = box[:4]
+            crop_img = numpy_image[int(y1):int(y2), int(x1):int(x2)]
             cropped_numpys[f"brick_{idx}"] = crop_img
-    else:
-        # Fallback: perform manual cropping from the numpy image using the detection boxes
-        if "boxes" in enriched_results and enriched_results["boxes"] is not None:
-            for idx, box in enumerate(enriched_results["boxes"]):
-                # Assuming box is defined as (x1, y1, x2, y2) in absolute coordinates
-                x1, y1, x2, y2 = box
-                crop_img = numpy_image[int(y1):int(y2), int(x1):int(x2)]
-                # Encode the cropped image to JPEG format into memory
-                success, buffer = cv2.imencode('.jpg', crop_img)
-                if success:
-                    # Wrap the encoded bytes into a BytesIO object
-                    bytes_io = io.BytesIO(buffer)
-                    # Optionally, decode back to a numpy array (if you need to work on the crop)
-                    crop_array = np.frombuffer(bytes_io.getbuffer(), dtype=np.uint8)
-                    crop_decoded = cv2.imdecode(crop_array, cv2.IMREAD_COLOR)
-                    cropped_numpys[f"brick_{idx}"] = crop_decoded
-
     enriched_results["cropped_numpys"] = cropped_numpys
 
-    # Obtener el plot anotado de la imagen usando el método plot() (se espera que retorne una imagen anotada en formato numpy)
+    # Obtener el plot anotado usando el método plot() de los resultados
     annotated_plot = results.plot() if hasattr(results, "plot") else None
     enriched_results["annotated_plot"] = annotated_plot
 
-    # Extraer metadata extra disponible del objeto results
-    metadata = {}
-    for attr in ['device', 'version', 'time']:
-        if hasattr(results, attr):
-            metadata[attr] = getattr(results, attr)
+    # Extraer metadata sobre el hardware de ejecución y la localizción del equipo si es posible
+    metadata = {
+        "os": platform.system(),
+        "release": platform.release(),
+        "version": platform.version(),
+        "processor": platform.processor(),
+        "architecture": platform.architecture()[0],
+        "hostname": socket.gethostname(),
+        "timestamp": datetime.datetime.now().isoformat()
+    }
     enriched_results["metadata"] = metadata
+    
 
     # Configurar carpeta de resultados
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     results_folder = os.path.join(working_folder, "results")
     os.makedirs(results_folder, exist_ok=True)
 
-    # Guardar imagen anotada si se solicita y si existe la imagen anotada
+    # Guardar imagen anotada si se solicita y si existe
     if SAVE_ANNOTATED and annotated_plot is not None:
         annotated_path = os.path.join(results_folder, f"annotated_{timestamp}.jpg")
         cv2.imwrite(annotated_path, annotated_plot)
@@ -285,13 +254,13 @@ def detect_bricks(model=None, numpy_image=None, working_folder=os.getcwd(), SAVE
 
     # Mostrar imagen anotada usando matplotlib
     if PLT_ANNOTATED and annotated_plot is not None:
+        # Convert BGR to RGB for display with matplotlib
         plt.imshow(cv2.cvtColor(annotated_plot, cv2.COLOR_BGR2RGB))
         plt.axis('off')
         plt.show()
 
     # Guardar resultados enriquecidos en un archivo JSON
     if SAVE_JSON:
-        # Debido a que algunos datos pueden no ser serializables (listas, arrays, objetos), se convierten a cadena mediante str()
         serializable_results = {}
         for key, value in enriched_results.items():
             try:
@@ -304,12 +273,11 @@ def detect_bricks(model=None, numpy_image=None, working_folder=os.getcwd(), SAVE
             json.dump(serializable_results, f, indent=4)
         enriched_results["json_results_path"] = json_path
 
-    if image_path:
-        enriched_results["path"] = image_path
+    if image_path is not None:
+        enriched_results["path"] = full_path
         write_metadata_to_exif(enriched_results)
     return enriched_results
 
-# --------------------------------------
 
 # Load the bricks model
 
@@ -367,7 +335,6 @@ def download_images_from_url(url):
 test_images = {}
 
 for key, url in TEST_IMAGES_URLS.items():
-    print()
     test_images[key] = download_images_from_url(url)
 
 
@@ -376,6 +343,8 @@ LOGO_IMAGE_URL = os.path.join(REPO_URL, LOGO_IMAGE_PATH)
 import requests
 from io import BytesIO
 from PIL import Image
+import platform
+import socket
 
 response = requests.get(LOGO_IMAGE_URL)
 response.raise_for_status()
@@ -388,3 +357,209 @@ raw_response = requests.get(download_url)
 raw_response.raise_for_status()
 logo_img = Image.open(BytesIO(raw_response.content))
 logo_img
+
+# detect studs
+
+import os
+import cv2
+import json
+import datetime
+import numpy as np
+import matplotlib.pyplot as plt
+import platform
+import socket
+
+def detect_studs(model=None, numpy_image=None, working_folder=os.getcwd(), SAVE_ANNOTATED=False, PLT_ANNOTATED=True, SAVE_JSON=False):
+    '''
+    Detect studs in an image using the studs model.
+    
+    Returns a dictionary with enriched results which contains:
+      - orig_img       : Original image (numpy.ndarray)
+      - orig_shape     : Tuple with image dimensions (height, width)
+      - boxes          : Detection boxes (if available)
+      - probs, obb, speed, names, path, as provided by the model prediction
+      - annotated_plot : A new annotated image showing the box centers and a regression line (no labels)
+      - keypoints      : a dictionary with relative coordinates (values between 0 and 1) representing the centers of bounding boxes
+      - metadata       : A dictionary with execution hardware and environment info.
+      
+    This function can also:
+      - Display the annotated image (if PLT_ANNOTATED is True)
+      - Save the annotated image and metadata to JSON.
+      - Write metadata to the image’s EXIF using write_metadata_to_exif().
+    '''
+    import cv2, os, json, datetime, numpy as np, matplotlib.pyplot as plt, platform, socket
+    # Make sure STUD_TO_DIMENSION_MAP is imported or defined earlier in your code
+    # from model_utils import STUD_TO_DIMENSION_MAP
+
+    # Use the studs model if none is provided
+    if model is None:
+        model = load_models()["studs"]
+    if numpy_image is None:
+        raise ValueError("Se debe proporcionar la imagen en formato numpy (numpy_image) o una ruta válida.")
+    
+    full_path = None
+    # If a path is provided, load and convert the image
+    if isinstance(numpy_image, str):
+        if not os.path.exists(numpy_image):
+            raise ValueError(f"La ruta {numpy_image} no es válida.")
+        full_path = os.path.abspath(numpy_image)
+        image_from_path = cv2.imread(numpy_image)
+        if image_from_path is None:
+            raise ValueError("La imagen no se pudo cargar desde la ruta proporcionada.")
+        # Model expects RGB
+        numpy_image = cv2.cvtColor(image_from_path, cv2.COLOR_BGR2RGB)
+    else:
+        # Assume image is already loaded in proper format 
+        numpy_image = cv2.cvtColor(numpy_image, cv2.COLOR_BGR2RGB)
+    
+    # Run prediction
+    results = model.predict(numpy_image)
+    if isinstance(results, list):
+        results = results[0]
+    
+    # Construct the enriched results dictionary
+    enriched_results = {}
+    enriched_results["orig_img"] = numpy_image
+    enriched_results["orig_shape"] = numpy_image.shape[:2]
+    
+    # Attach basic attributes if available
+    for attr in ["boxes", "speed", "names", "path"]:
+        if hasattr(results, attr):
+            enriched_results[attr] = getattr(results, attr)
+    
+    # Calculate keypoints: centers of each bounding box (both absolute and relative)
+    keypoints = {}
+    abs_centers = []  # For regression, we need absolute coordinates
+    boxes_conf = []
+    if hasattr(results, "boxes") and results.boxes is not None and len(results.boxes) > 0:
+        try:
+            boxes_conf = results.boxes.xyxy.cpu().numpy().tolist()
+        except Exception:
+            boxes_conf = [box for box in results.boxes]
+        h, w = numpy_image.shape[:2]
+        for idx, box in enumerate(boxes_conf):
+            x1, y1, x2, y2 = box[:4]
+            center_x = (x1 + x2) / 2.0
+            center_y = (y1 + y2) / 2.0
+            abs_centers.append((center_x, center_y))
+            # Relative coordinates in [0,1]
+            keypoints[f"stud_{idx}"] = (center_x / w, center_y / h)
+    enriched_results["keypoints"] = keypoints
+
+    # Create a new annotated image based on the original image:
+    annotated_plot = numpy_image.copy()
+    # Draw the center of each box (filled red circle)
+    for center in abs_centers:
+        cv2.circle(annotated_plot, (int(center[0]), int(center[1])), 4, (255, 0, 0), thickness=-1)
+    
+    # If there are at least 2 centers, compute a regression line and overlay it
+    if len(abs_centers) > 1:
+        abs_centers_arr = np.array(abs_centers)
+        xs = abs_centers_arr[:, 0]
+        ys = abs_centers_arr[:, 1]
+        m, b = np.polyfit(xs, ys, 1)
+        # Use full width of image for endpoints
+        x_start, x_end = 0, w
+        y_start = int(m * x_start + b)
+        y_end = int(m * x_end + b)
+        cv2.line(annotated_plot, (x_start, y_start), (x_end, y_end), (0, 255, 0), thickness=2)
+    
+    enriched_results["annotated_plot"] = annotated_plot
+
+    # --- NEW LOGIC FOR STUD DIMENSION CLASSIFICATION ---
+    if boxes_conf:
+        num_studs = len(boxes_conf)
+        print("[DEBUG] Number of studs:", num_studs)
+        if num_studs not in STUD_TO_DIMENSION_MAP:
+            print(f"[ERROR] Deviant number of studs detected ({num_studs}). Skipping classification.")
+        else:
+            # Extract stud center coordinates from boxes_conf
+            centers = [((box[0] + box[2]) / 2.0, (box[1] + box[3]) / 2.0) for box in boxes_conf]
+            print("[DEBUG] Centers:", centers)
+
+            # Compute mean bounding box size for spacing calculation
+            box_sizes = [((box[2] - box[0] + box[3] - box[1]) / 2.0) for box in boxes_conf]
+            print("[DEBUG] Box sizes:", box_sizes)
+
+            # Fit a regression line using the stud centers
+            xs, ys = zip(*centers)
+            m, b = np.polyfit(xs, ys, 1)
+            print("[DEBUG] Regression m, b:", m, b)
+
+            # Compute deviation from the regression line for each center
+            deviations = [abs(y - (m * x + b)) for x, y in centers]
+            print("[DEBUG] Deviations:", deviations)
+
+            # Decision boundary based on the max deviation and half the mean box size
+            threshold = np.mean(box_sizes) / 2.0
+            print("[DEBUG] Threshold:", threshold)
+
+            classification_aux = "Nx1" if max(deviations) < threshold else "Nx2"
+            print("[DEBUG] Classification auxiliary:", classification_aux)
+
+            # Determine final brick dimension using STUD_TO_DIMENSION_MAP
+            possible_dimensions = STUD_TO_DIMENSION_MAP.get(num_studs, "Unknown")
+            print("[DEBUG] Possible dimensions:", possible_dimensions)
+            if possible_dimensions != "Unknown":
+                if isinstance(possible_dimensions, list):
+                    new_name = possible_dimensions[0] if classification_aux == "Nx2" else possible_dimensions[1]
+                else:
+                    new_name = possible_dimensions
+                print("[DEBUG] Final determined new_name:", new_name)
+
+                # adds DIMENSION key to enriched_results
+                enriched_results["DIMENSION"] = new_name
+            else:
+                enriched_results["DIMENSION"] = "Unknown"
+                
+    # --- END NEW LOGIC ---
+
+    # Add hardware and environment metadata
+    enriched_results["metadata"] = {
+        "os": platform.system(),
+        "release": platform.release(),
+        "version": platform.version(),
+        "processor": platform.processor(),
+        "architecture": platform.architecture()[0],
+        "hostname": socket.gethostname(),
+        "timestamp": datetime.datetime.now().isoformat()
+    }
+    
+    # Configure results folder and timestamp
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    results_folder = os.path.join(working_folder, "results")
+    os.makedirs(results_folder, exist_ok=True)
+    
+    # Save annotated image if required
+    if SAVE_ANNOTATED:
+        annotated_path = os.path.join(results_folder, f"annotated_{timestamp}.jpg")
+        # Save as BGR image
+        cv2.imwrite(annotated_path, cv2.cvtColor(annotated_plot, cv2.COLOR_RGB2BGR))
+        enriched_results["annotated_image_path"] = annotated_path
+
+    # Plot annotated image if requested
+    if PLT_ANNOTATED:
+        plt.imshow(annotated_plot)
+        plt.axis('off')
+        plt.show()
+    
+    # Save JSON version of results (omitting non-serializable types)
+    if SAVE_JSON:
+        serializable_results = {}
+        for key, value in enriched_results.items():
+            try:
+                json.dumps(value)
+                serializable_results[key] = value
+            except (TypeError, OverflowError):
+                serializable_results[key] = str(value)
+        json_path = os.path.join(results_folder, f"results_{timestamp}.json")
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(serializable_results, f, indent=4)
+        enriched_results["json_results_path"] = json_path
+    
+    if full_path is not None:
+        enriched_results["path"] = full_path
+        write_metadata_to_exif(enriched_results)
+    
+    return enriched_results
+
