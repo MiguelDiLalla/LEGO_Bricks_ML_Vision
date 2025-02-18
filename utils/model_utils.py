@@ -1,5 +1,3 @@
-# model_utils.py
-
 import os
 import sys
 import json
@@ -13,6 +11,7 @@ import shutil
 import zipfile
 import matplotlib.pyplot as plt
 from ultralytics import YOLO
+
 import piexif
 from PIL import Image, ImageDraw, ImageFont, ExifTags
 import requests
@@ -54,26 +53,36 @@ GITHUB_URLS = {
 
 def load_models(urls=GITHUB_URLS):
     '''
-    Load bricks model and studs model from fixed github URLs.
-    return a dictionary with the Yolo models ready to use
+    Load bricks model and studs model from fixed GitHub URLs.
+    If fetching from GitHub fails, load the model from a local file.
+    Returns a dictionary with the YOLO models ready to use.
     '''
     
     import tempfile
     import requests
     from ultralytics import YOLO
+    import os
 
     models = {}
     headers = {'Accept': 'application/vnd.github.v3.raw'}
+    
     for key, url in urls.items():
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as tmp:
-            tmp.write(response.content)
-            tmp.flush()
-            temp_filepath = tmp.name
-        model = YOLO(temp_filepath)
-        models[key] = model
-        models[key] = model
+        try:
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as tmp:
+                tmp.write(response.content)
+                tmp.flush()
+                temp_filepath = tmp.name
+            model = YOLO(temp_filepath)
+        except Exception as e:
+            print(f"Failed to fetch {key} model from GitHub (error: {e}). Fetching locally...")
+            # Local model paths are relative to the parent folder of the current working directory.
+            parent_dir = os.path.dirname(os.getcwd())
+            local_path = os.path.join(parent_dir, MODELS_PATHS[key])
+            if not os.path.exists(local_path):
+                raise FileNotFoundError(f"Local model file not found: {local_path}")
+            model = YOLO(local_path)
         models[key] = model
     return models
 
@@ -368,6 +377,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import platform
 import socket
+import cv2, numpy as np, json, os, datetime
+
 
 def detect_studs(model=None, numpy_image=None, working_folder=os.getcwd(), SAVE_ANNOTATED=False, PLT_ANNOTATED=True, SAVE_JSON=False):
     '''
@@ -472,6 +483,7 @@ def detect_studs(model=None, numpy_image=None, working_folder=os.getcwd(), SAVE_
         print("[DEBUG] Number of studs:", num_studs)
         if num_studs not in STUD_TO_DIMENSION_MAP:
             print(f"[ERROR] Deviant number of studs detected ({num_studs}). Skipping classification.")
+            enriched_results["DIMENSION"] = "Unknown"
         else:
             # Extract stud center coordinates from boxes_conf
             centers = [((box[0] + box[2]) / 2.0, (box[1] + box[3]) / 2.0) for box in boxes_conf]
@@ -506,12 +518,12 @@ def detect_studs(model=None, numpy_image=None, working_folder=os.getcwd(), SAVE_
                 else:
                     new_name = possible_dimensions
                 print("[DEBUG] Final determined new_name:", new_name)
-
-                # adds DIMENSION key to enriched_results
                 enriched_results["DIMENSION"] = new_name
             else:
                 enriched_results["DIMENSION"] = "Unknown"
-                
+    else:
+        # Handle case when no studs (boxes) are detected
+        enriched_results["DIMENSION"] = "No studs detected"
     # --- END NEW LOGIC ---
 
     # Add hardware and environment metadata
@@ -563,3 +575,39 @@ def detect_studs(model=None, numpy_image=None, working_folder=os.getcwd(), SAVE_
     
     return enriched_results
 
+
+LOGO_IMAGE_PATH = "presentation/logo.png"
+LOGO_IMAGE_URL = os.path.join(REPO_URL, LOGO_IMAGE_PATH)
+import requests
+from io import BytesIO
+from PIL import Image
+import numpy as np
+from PIL import Image, ImageChops
+
+response = requests.get(LOGO_IMAGE_URL)
+response.raise_for_status()
+# The GitHub API returns a JSON with metadata about the file.
+api_data = response.json()
+download_url = api_data.get("download_url")
+if not download_url:
+	raise ValueError("Download URL not found in API response.")
+raw_response = requests.get(download_url)
+raw_response.raise_for_status()
+logo_img = Image.open(BytesIO(raw_response.content))
+logo_img
+
+
+# function to plot and save enriched/branded bricks detection
+
+def bricks_image_composer(bricks_results, logo_image=logo_img, save_path=None):
+    '''
+    Given a dictionary of enriched bricks detection results and an optional logo image,
+    this function composes a results image with a red background and a right-side bar that
+    renders selected enriched results in text. The logo is then placed in the bottom-right
+    corner of the composed image.
+    
+    If a save_path is not provided, the composed image will be saved in a "results" folder
+    under the current working directory.
+    
+    Returns the composed image as a numpy array.
+    '''
