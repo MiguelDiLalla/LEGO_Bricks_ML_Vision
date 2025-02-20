@@ -221,6 +221,15 @@ def detect_bricks(model=None, numpy_image=None, working_folder=os.getcwd(), SAVE
         if hasattr(results, attr):
             enriched_results[attr] = getattr(results, attr)
 
+    # Example to convert YOLO's Boxes object to a serializable format
+    if "boxes" in enriched_results:
+        try:
+            # Assume boxes.xyxy is a tensor or numpy array that can be converted to a list:
+            enriched_results["boxes"] = enriched_results["boxes"].xyxy.cpu().numpy().tolist()
+        except Exception:
+            # Fallback: convert to string representation if conversion fails
+            enriched_results["boxes"] = str(enriched_results["boxes"])
+
     # Extraer y guardar los recortes de ladrillos usando los cuadros (boxes)
     cropped_numpys = {}
     if hasattr(results, "boxes") and results.boxes is not None and len(results.boxes) > 0:
@@ -277,11 +286,14 @@ def detect_bricks(model=None, numpy_image=None, working_folder=os.getcwd(), SAVE
     if SAVE_JSON:
         serializable_results = {}
         for key, value in enriched_results.items():
-            try:
-                json.dumps(value)
-                serializable_results[key] = value
-            except (TypeError, OverflowError):
-                serializable_results[key] = str(value)
+            if isinstance(value, np.ndarray):
+                serializable_results[key] = value.tolist()  # Convert numpy arrays to lists
+            else:
+                try:
+                    json.dumps(value)  # Test if serializable
+                    serializable_results[key] = value
+                except (TypeError, OverflowError):
+                    serializable_results[key] = str(value)  # Otherwise convert to string
         json_path = os.path.join(results_folder, f"results_{timestamp}.json")
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(serializable_results, f, indent=4)
@@ -451,6 +463,15 @@ def detect_studs(model=None, numpy_image=None, working_folder=os.getcwd(), SAVE_
         if hasattr(results, attr):
             enriched_results[attr] = getattr(results, attr)
     
+    # Example to convert YOLO's Boxes object to a serializable format
+    if "boxes" in enriched_results:
+        try:
+            # Assume boxes.xyxy is a tensor or numpy array that can be converted to a list:
+            enriched_results["boxes"] = enriched_results["boxes"].xyxy.cpu().numpy().tolist()
+        except Exception:
+            # Fallback: convert to string representation if conversion fails
+            enriched_results["boxes"] = str(enriched_results["boxes"])
+
     # Calculate keypoints: centers of each bounding box (both absolute and relative)
     keypoints = {}
     abs_centers = []  # For regression, we need absolute coordinates
@@ -507,7 +528,7 @@ def detect_studs(model=None, numpy_image=None, working_folder=os.getcwd(), SAVE_
             print("[DEBUG] Box sizes:", box_sizes)
 
             # Fit a regression line using the stud centers
-            xs, ys = zip(*centers)
+            xs, ys = zip(*(centers))
             m, b = np.polyfit(xs, ys, 1)
             print("[DEBUG] Regression m, b:", m, b)
 
@@ -572,11 +593,14 @@ def detect_studs(model=None, numpy_image=None, working_folder=os.getcwd(), SAVE_
     if SAVE_JSON:
         serializable_results = {}
         for key, value in enriched_results.items():
-            try:
-                json.dumps(value)
-                serializable_results[key] = value
-            except (TypeError, OverflowError):
-                serializable_results[key] = str(value)
+            if isinstance(value, np.ndarray):
+                serializable_results[key] = value.tolist()  # Convert numpy arrays to lists
+            else:
+                try:
+                    json.dumps(value)  # Test if serializable
+                    serializable_results[key] = value
+                except (TypeError, OverflowError):
+                    serializable_results[key] = str(value)  # Otherwise convert to string
         json_path = os.path.join(results_folder, f"results_{timestamp}.json")
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(serializable_results, f, indent=4)
