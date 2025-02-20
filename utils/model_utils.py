@@ -1,3 +1,7 @@
+# model_utils.py
+
+
+
 import os
 import sys
 import json
@@ -101,10 +105,11 @@ def write_metadata_to_exif(enriched_results=None):
     """
     import json, os, piexif
 
-    if enriched_results is None or enriched_results.get("path") is None:
+    if enriched_results is None or enriched_results.get("encoded_metadata") is None:
         return
 
-    image_path = enriched_results.get("path")
+    metadata = json.loads(enriched_results["encoded_metadata"])
+    image_path = metadata.get("path")
     if not isinstance(image_path, str) or not os.path.isfile(image_path) or not image_path.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif')):
         print("The image path is invalid or the file is not a supported image format.")
         return
@@ -284,6 +289,14 @@ def detect_bricks(model=None, numpy_image=None, working_folder=os.getcwd(), SAVE
 
     if image_path is not None:
         enriched_results["path"] = full_path
+
+    # Restructure enriched_results: group raw images and encode the rest as UTF-8 JSON.
+    bitmaps = {"orig_img": enriched_results.pop("orig_img", None),
+               "cropped_numpys": enriched_results.pop("cropped_numpys", None)}
+    encoded_metadata = json.dumps(enriched_results, indent=4, ensure_ascii=False)
+    enriched_results = {"bitmaps_numpy": bitmaps, "encoded_metadata": encoded_metadata}
+
+    if full_path is not None:
         write_metadata_to_exif(enriched_results)
     return enriched_results
 
@@ -571,6 +584,13 @@ def detect_studs(model=None, numpy_image=None, working_folder=os.getcwd(), SAVE_
     
     if full_path is not None:
         enriched_results["path"] = full_path
+
+    # Restructure enriched_results for studs. Note: studs have only 'orig_img'
+    bitmaps = {"orig_img": enriched_results.pop("orig_img", None)}
+    encoded_metadata = json.dumps(enriched_results, indent=4, ensure_ascii=False)
+    enriched_results = {"bitmaps_numpy": bitmaps, "encoded_metadata": encoded_metadata}
+
+    if full_path is not None:
         write_metadata_to_exif(enriched_results)
     
     return enriched_results
@@ -581,8 +601,6 @@ LOGO_IMAGE_URL = os.path.join(REPO_URL, LOGO_IMAGE_PATH)
 import requests
 from io import BytesIO
 from PIL import Image
-import numpy as np
-from PIL import Image, ImageChops
 
 response = requests.get(LOGO_IMAGE_URL)
 response.raise_for_status()
@@ -594,7 +612,8 @@ if not download_url:
 raw_response = requests.get(download_url)
 raw_response.raise_for_status()
 logo_img = Image.open(BytesIO(raw_response.content))
-logo_img
+# logo_img
+
 
 
 # function to plot and save enriched/branded bricks detection
