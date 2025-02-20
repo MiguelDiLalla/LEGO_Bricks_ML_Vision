@@ -654,3 +654,76 @@ def bricks_image_composer(bricks_results, logo_image=logo_img, save_path=None):
     
     Returns the composed image as a numpy array.
     '''
+import os
+import sys
+import json
+import logging
+import datetime
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+import requests
+from PIL import Image, ImageDraw, ImageFont, ExifTags
+from io import BytesIO
+# ...existing imports...
+
+# Configure logger for the entire module
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s | %(levelname)s | %(message)s"
+)
+
+def filter_serializable(data_dict):
+    """Return a new dictionary that excludes any values that are numpy arrays."""
+    serializable = {}
+    for key, value in data_dict.items():
+        if isinstance(value, np.ndarray):
+            logger.debug("Excluding key '%s' from JSON serialization (numpy array).", key)
+            continue
+        try:
+            json.dumps(value)
+            serializable[key] = value
+        except (TypeError, OverflowError):
+            serializable[key] = str(value)
+    return serializable
+
+# ...existing functions...
+
+def detect_bricks(model=None, numpy_image=None, working_folder=os.getcwd(), 
+                  SAVE_ANNOTATED=False, PLT_ANNOTATED=False, SAVE_JSON=False):
+    '''
+    Detect bricks in an image using the bricks model.
+    Returns dictionary with enriched detection results.
+    '''
+    import cv2, datetime, json, numpy as np, matplotlib.pyplot as plt
+    logger.debug("Starting brick detection.")
+
+    # [ ...existing code for loading image, running prediction, etc... ]
+    # --- after enriching enriched_results (before SAVE_JSON block) ---
+
+    # Save JSON version of results (omitting numpy arrays)
+    if SAVE_JSON:
+        logger.debug("Preparing to save JSON results; filtering non-serializable items.")
+        serializable_results = filter_serializable(enriched_results)
+        json_path = os.path.join(working_folder, "results", f"results_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(serializable_results, f, indent=4)
+        enriched_results["json_results_path"] = json_path
+        logger.debug("JSON results saved to %s", json_path)
+
+    # Restructure enriched_results for returning
+    bitmaps = {"orig_img": enriched_results.pop("orig_img", None),
+               "cropped_numpys": enriched_results.pop("cropped_numpys", None)}
+    encoded_metadata = json.dumps(enriched_results, indent=4, ensure_ascii=False)
+    enriched_results = {"bitmaps_numpy": bitmaps, "encoded_metadata": encoded_metadata}
+
+    # Write metadata to EXIF if valid local image path
+    if "full_path" in locals() and full_path is not None:
+        write_metadata_to_exif(enriched_results)
+    logger.debug("Brick detection completed.")
+    return enriched_results
+
+# Similarly—in detect_studs—add logger.debug(...) calls and use filter_serializable() if saving JSON.
+
+# (Remaining parts of the file continue unchanged.)
