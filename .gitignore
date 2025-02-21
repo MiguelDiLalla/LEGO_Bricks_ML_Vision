@@ -36,7 +36,7 @@ dist/
 # ✅ Ignore results and test files
 results/
 output/
-tests/
+# tests/
 notebooks/
 
 # ✅ Ignore IDE and editor-specific files
