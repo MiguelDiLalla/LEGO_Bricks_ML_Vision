@@ -318,11 +318,11 @@ def render_metadata(image, metadata, LOGO=config["LOGO_NUMPY"]):
         np.ndarray: Metadata panel image.
     """
     # Remove the specified keys from metadata
-    metadata.pop("boxes_coordinates", None)
-    metadata.pop("Repository", None)
+    render_metadata = metadata.copy()
+    render_metadata.pop("boxes_coordinates", None)
+    render_metadata.pop("Repository", None)
     
-    # Remove the "boxes" key if it exists
-    metadata.pop("boxes", None)
+    
     
     # -- Convert input image to PIL and get dimensions --
     img_pil = Image.fromarray(image)
@@ -350,7 +350,7 @@ def render_metadata(image, metadata, LOGO=config["LOGO_NUMPY"]):
     max_text_height = panel_height - logo_height - text_margin
 
     # Build a list of lines from metadata (each item is "key: value")
-    lines = [f"{k}: {v}" for k, v in metadata.items()]
+    lines = [f"{k}: {v}" for k, v in render_metadata.items()]
 
     # -------------------------------------------------
     # 1) Define a helper to wrap a single line to fit max_width
