@@ -1,0 +1,22 @@
+{
+    "orig_shape": [
+        600,
+        800
+    ],
+    "speed": {
+        "preprocess": 0.0,
+        "inference": 0.0,
+        "postprocess": 0.0
+    },
+    "mode": "bricks",
+    "path": "image0.jpg",
+    "os_full_version_name": "Windows-10-10.0.26120-SP0",
+    "processor": "Intel64 Family 6 Model 142 Stepping 11, GenuineIntel",
+    "architecture": "AMD64",
+    "hostname": "O-LeafeonDesktop",
+    "timestamp": "2025-02-21T18:54:42.097183",
+    "annotated_image_path": "C:\\Users\\User\\Projects_Unprotected\\LEGO_Bricks_ML_Vision\\tests\\test_results\\composite_image.jpg",
+    "json_results_path": "",
+    "TimesScanned": 1,
+    "message": "Muchas gracias por ejecutar la DEMO del projecto"
+}

@@ -21,6 +21,7 @@ import requests
 from ultralytics import YOLO
 import piexif
 import cv2
+from PIL import Image, ImageDraw, ImageFont
 
 # Set up professional logging with emoji markers
 logging.basicConfig(
@@ -304,50 +305,163 @@ def extract_metadata_from_yolo_result(results, orig_image):
     }
     return metadata
 
-def render_metadata(image, metadata):
+def render_metadata(image, metadata, LOGO=config["LOGO_NUMPY"]):
     """
-    Creates a metadata panel and combines it with the original image.
-    The panel includes formatted metadata and project logo from config. 🖼️
+    Creates a metadata panel with a logo at the bottom, wrapping text that is too long.
+
+    Args:
+        image (np.ndarray): Source image.
+        metadata (dict): Metadata to render as key: value pairs.
+        LOGO (np.ndarray): Logo image.
+
     Returns:
-      composite_image (numpy.ndarray): rendered metadata + logo at the bottom
+        np.ndarray: Metadata panel image.
     """
-    img_height, img_width = image.shape[:2]
-    metadata_width = img_width // 4
-    # Create red background panel
-    metadata_panel = np.full((img_height, metadata_width, 3), (0, 0, 255), dtype=np.uint8)
-    metadata_text = json.dumps(metadata, indent=4)
-    lines = metadata_text.splitlines()
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    font_scale = 0.5
-    font_thickness = 1
-    text_color = (255, 255, 255)
-    margin = 10
-    line_height = 15
-    # Reserve space for logo fetched from config
-    logo_height = 0
-    logo_resized = None
-    try:
-        logo_img = config.get("LOGO_NUMPY")
-        if logo_img is not None:
-            logo_h, logo_w = logo_img.shape[:2]
-            scale = metadata_width / logo_w
-            logo_height = int(logo_h * scale)
-            logo_resized = cv2.resize(logo_img, (metadata_width, logo_height))
-    except Exception:
-        logo_resized = None
-        logo_height = 0
-    text_area_height = img_height - logo_height - 2 * margin
-    y = margin + line_height
+    # Remove the specified keys from metadata
+    metadata.pop("boxes_coordinates", None)
+    metadata.pop("Repository", None)
+    
+    # Remove the "boxes" key if it exists
+    metadata.pop("boxes", None)
+    
+    # -- Convert input image to PIL and get dimensions --
+    img_pil = Image.fromarray(image)
+    img_width, img_height = img_pil.size
+
+    # -- Define panel dimensions --
+    panel_width = img_width // 4      # 1/4 of image width
+    panel_height = img_height         # same height as the source image
+    text_margin = 10
+
+    # -- Create a red panel (we'll render text + logo on this) --
+    panel = Image.new("RGB", (panel_width, panel_height), color=(255, 0, 0))
+
+    # -- Prepare to draw on the panel --
+    draw = ImageDraw.Draw(panel)
+
+    # -- Convert LOGO (np.ndarray) to PIL and resize to panel width --
+    logo_img = Image.fromarray(LOGO)
+    orig_logo_w, orig_logo_h = logo_img.size
+    logo_width = panel_width
+    logo_height = int(logo_width * orig_logo_h / orig_logo_w)  # maintain aspect ratio
+    logo_img = logo_img.resize((logo_width, logo_height), Image.Resampling.LANCZOS)
+
+    # Reserve space at the bottom of the panel for the logo
+    max_text_height = panel_height - logo_height - text_margin
+
+    # Build a list of lines from metadata (each item is "key: value")
+    lines = [f"{k}: {v}" for k, v in metadata.items()]
+
+    # -------------------------------------------------
+    # 1) Define a helper to wrap a single line to fit max_width
+    # -------------------------------------------------
+    def wrap_line(line, font, draw, max_width):
+        """
+        Splits a single string into multiple sub-lines so that
+        none exceed max_width in pixels.
+        """
+        words = line.split()
+        wrapped_lines = []
+        current_line = ""
+
+        for word in words:
+            # Try adding this word to the current line
+            candidate_line = (current_line + " " + word).strip()
+            bbox = draw.textbbox((0, 0), candidate_line, font=font)
+            line_width = bbox[2] - bbox[0]
+
+            if line_width <= max_width:
+                # It fits, so update current_line
+                current_line = candidate_line
+            else:
+                # It doesn't fit, so push current_line to wrapped_lines
+                wrapped_lines.append(current_line)
+                # Start a new line with the current word
+                current_line = word
+
+        # Add the last line if it's not empty
+        if current_line:
+            wrapped_lines.append(current_line)
+
+        return wrapped_lines
+
+    # -------------------------------------------------
+    # 2) Find a single font size that fits all lines
+    #    (with wrapping) into the available width & height.
+    # -------------------------------------------------
+    def find_consistent_font_size(lines, max_width, max_height, initial_size=20):
+        """
+        Returns the largest font (<= initial_size) that can fit
+        all lines (with wrapping) within max_width x max_height.
+        """
+        for size in range(initial_size, 0, -1):
+            try:
+                # Using a bolder console style font
+                font = ImageFont.truetype("consolab.ttf", size)
+            except IOError:
+                # Fallback if 'consolab.ttf' not found
+                font = ImageFont.load_default()
+                # Once we fall back, let's just return it
+                return font
+
+            total_height = 0
+            # We'll check each line's wrapped sub-lines
+            for line in lines:
+                sublines = wrap_line(line, font, draw, max_width)
+                for sub in sublines:
+                    bbox = draw.textbbox((0, 0), sub, font=font)
+                    line_height = bbox[3] - bbox[1]
+                    total_height += line_height + text_margin
+
+            # If everything fits within the panel's text area, return this font
+            if total_height <= max_height:
+                return font
+
+        # If nothing fits, return a default small font
+        return ImageFont.load_default()
+
+    # -- Compute a single font that can handle all lines + wrapping --
+    available_width = panel_width - 2 * text_margin
+    font = find_consistent_font_size(
+        lines,
+        max_width=available_width,
+        max_height=max_text_height,
+        initial_size=20
+    )
+
+    # -------------------------------------------------
+    # 3) Actually render text line-by-line with wrapping
+    # -------------------------------------------------
+    current_y = text_margin
     for line in lines:
-        if y > text_area_height:
-            break
-        cv2.putText(metadata_panel, line, (margin, y), font, font_scale, text_color, font_thickness, cv2.LINE_AA)
-        y += line_height
-    if logo_resized is not None:
-        start_y = img_height - logo_height
-        metadata_panel[start_y:img_height, 0:metadata_width] = logo_resized
-    # composite_image = np.hstack((image, metadata_panel))
-    return metadata_panel
+        sublines = wrap_line(line, font, draw, available_width)
+        for sub in sublines:
+            bbox = draw.textbbox((0, 0), sub, font=font)
+            line_height = bbox[3] - bbox[1]
+            # If we don't have enough space left, stop
+            if current_y + line_height > max_text_height:
+                break
+            draw.text((text_margin, current_y), sub, fill=(255, 255, 255), font=font)
+            current_y += line_height + text_margin
+
+    # -- Paste the logo at the bottom of the panel using Photoshop "screen" blend mode --
+    logo_y = panel_height - logo_height
+    # Extract the panel region where the logo will be blended
+    panel_region = panel.crop((0, logo_y, logo_width, panel_height))
+    # Convert both images to numpy arrays for blending
+    np_panel = np.array(panel_region).astype(float)
+    np_logo = np.array(logo_img).astype(float)
+    # Apply the screen blend formula: result = 255 - ((255 - background) * (255 - foreground) / 255)
+    blended = 255 - ((255 - np_panel) * (255 - np_logo) / 255)
+    blended = blended.astype(np.uint8)
+    blended_region = Image.fromarray(blended)
+    # Paste the blended result back onto the panel
+    panel.paste(blended_region, (0, logo_y))
+
+    # -- Convert the panel back to NumPy array and return --
+    panel_bgr = cv2.cvtColor(np.array(panel), cv2.COLOR_RGB2BGR)
+    return panel_bgr
+
 
 def composite_inference_branded_image(annotated_image, rendered_metadata, margin=10):
     """
@@ -385,9 +499,6 @@ def detect_bricks(image_input, model=None, conf=0.25, save_json=False, save_anno
             return None
 
     if isinstance(image_input, str):
-        if not os.path.exists(image_input):
-            logger.error("❌ Image path does not exist: %s", image_input)
-            return None
         image = cv2.imread(image_input)
         if image is None:
             logger.error("❌ Failed to load image from path: %s", image_input)
@@ -406,10 +517,6 @@ def detect_bricks(image_input, model=None, conf=0.25, save_json=False, save_anno
 
         annotated_image = results[0].plot() 
         
-        # [DEBUG] display the annotated image
-        cv2.imshow("Annotated Image", annotated_image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
         
         cropped_detections = []
         for idx, box in enumerate(boxes_np):
