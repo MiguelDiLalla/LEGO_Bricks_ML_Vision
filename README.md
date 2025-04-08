@@ -21,7 +21,15 @@
 
 This project is a compact but ambitious attempt to answer that question — by building a real machine learning pipeline that classifies LEGO bricks based on top-view images. It integrates two finetuned YOLOv8 models and a geometric post-processing algorithm for dimension inference.
 
-While powerful commercial systems like [Brickognize](https://brickognize.com/) or [BrickIt](https://brickit.app/) achieve impressive results across thousands of parts, they also operate at a scale backed by teams, servers, and datasets orders of magnitude larger than mine. Brickssifier is a personal engineering exercise: built from scratch, trained on ~2000 images, and deployed with curiosity and care.
+While powerful commercial systems like Brickognize or BrickIt achieve impressive results across thousands of parts, they also operate at a scale backed by teams, servers, and datasets orders of magnitude larger than mine:
+
+### 🪄 Commercial Systems vs. Personal Projects
+
+* **Brickognize** (Tramacsoft) uses Mask R-CNN with synthetic image generation to power a commercial tool that identifies over 85,000 LEGO parts and sets.
+
+* **BrickIt** (startup team) relies on a mobile-optimized CNN for real-time detection of bricks in piles, providing immediate visual feedback in a polished mobile app.
+
+By contrast, Brickssifier is a personal engineering exercise: built from scratch, trained on ~2000 images, and deployed with curiosity and care.
 
 ---
 
@@ -58,11 +66,7 @@ The full annotated dataset is available for download and use in your own project
 > 🧷 **[Download Dataset from Kaggle](https://www.kaggle.com/datasets/migueldilalla/spiled-lego-bricks)**
 
 ### 📷 Example Grid (Annotated Images)
-> *(Images will load from the `assets/dataset_bricks/` folder)*
-
-```
-![Grid Placeholder - Brick Detection Examples](#TODO)
-```
+![Labeled Brick Examples](https://github.com/MiguelDiLalla/Brickssifier_Studwise/presentation/readme_dataset_samples/bricks/output_grid_7.webp)
 
 ---
 
