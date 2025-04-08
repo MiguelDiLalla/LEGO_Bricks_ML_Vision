@@ -16,7 +16,9 @@ Key Features:
 Available Commands:
     detect-bricks: Detect LEGO bricks in images
     detect-studs: Detect studs on LEGO bricks
+    detect-multiclass: Detect and classify LEGO bricks in one step
     infer: Run complete detection pipeline
+    visualize-batch: Create grid visualizations of batch inference results
     data-processing:
         - labelme-to-yolo: Convert LabelMe annotations to YOLO format
         - keypoints-to-bboxes: Convert keypoints to bounding boxes
@@ -35,8 +37,14 @@ Usage Examples:
     # Run full inference pipeline
     lego_cli.py infer --image path/to/image.jpg
 
+    # Visualize batch processing results
+    lego_cli.py visualize-batch path/to/metadata.json --samples 6
+
     # Convert annotations
     lego_cli.py data-processing labelme-to-yolo --input path/to/json
+
+    # Visualize annotations
+    lego_cli.py data-processing visualize --input path/to/images --labels path/to/labels
 
 Dependencies:
     - click: CLI framework
