@@ -66,7 +66,7 @@ The full annotated dataset is available for download and use in your own project
 > 🧷 **[Download Dataset from Kaggle](https://www.kaggle.com/datasets/migueldilalla/spiled-lego-bricks)**
 
 ### 📷 Example Grid (Annotated Images)
-![Labeled Brick Examples](https://github.com/MiguelDiLalla/Brickssifier_Studwise/presentation/readme_dataset_samples/bricks/output_grid_7.webp)
+![Labeled Brick Examples]("https://migueldilalla.github.io/\assets\own-projects-resources\readme_dataset_samples\bricks\output_grid_7.webp)
 
 ---
 
