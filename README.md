@@ -1,5 +1,7 @@
 ![Hero Banner](https://migueldilalla.github.io/assets/branding-elements/brickssifier-herobanner.jpg)
 
+<div align="center">
+
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.1+-ee4c2c.svg)](https://pytorch.org)
 [![YOLOv8](https://img.shields.io/badge/YOLOv8-8.1+-00FFFF.svg)](https://github.com/ultralytics/ultralytics)
@@ -9,9 +11,10 @@
 [![Rich](https://img.shields.io/badge/Rich-13.0+-9933CC.svg)](https://github.com/Textualize/rich)
 [![Click](https://img.shields.io/badge/Click-8.1+-yellow.svg)](https://click.palletsprojects.com)
 
+</div>
+
 # 🧱 Project: Brickssifier_Studwise
 
-> *It classifies bricks. Imperfectly. Passionately.*
 
 > *AI is learning from us. But what are we teaching it?*
 
@@ -89,6 +92,11 @@ Each cropped brick image is relabeled with visible **stud positions**:
 
 
 ---
+## 🔍 Bricks single-class detectron Cropper
+
+This model was suppose to handle spiled bricks image inputs. that means that the model should be able to detect bricks in a pile of bricks. The model was trained on a dataset of 2000+ images of individual LEGO bricks captured under natural lighting with varied backgrounds.
+
+![Bricks model inference example](https://migueldilalla.github.io/assets/own-projects-resources/readme_model_samples/readme-model1-display.webp)
 
 ## 📐 Stud Geometry Classifier: Algorithm Summary
 
@@ -102,7 +110,9 @@ When a stud count maps to multiple possible dimensions, spatial logic is used to
 - If deviation < threshold → studs aligned → shape is linear (e.g., 1x8)
 - Else → grid pattern → 2D shape (e.g., 2x4)
 
-> 🧠 Diagram Placeholder: Stud Geometry Classifier Logic → [#TODO: Insert visual explanation]
+> ![Studs model inference & Clasification example 2x2 piece](https://migueldilalla.github.io/assets/own-projects-resources/readme_model_samples/readme-model2_2x2-display.webp)
+
+> ![Studs model inference & Clasification example 4x1 piece](https://migueldilalla.github.io/assets/own-projects-resources/readme_model_samples/readme-model2_4X1-display.webp)
 
 ---
 
