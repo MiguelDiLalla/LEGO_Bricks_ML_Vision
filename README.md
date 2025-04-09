@@ -66,7 +66,7 @@ The full annotated dataset is available for download and use in your own project
 > 🧷 **[Download Dataset from Kaggle](https://www.kaggle.com/datasets/migueldilalla/spiled-lego-bricks)**
 
 ### 📷 Example Grid (Annotated Images)
-![Labeled Brick Examples]("https://migueldilalla.github.io/\assets\own-projects-resources\readme_dataset_samples\bricks\output_grid_7.webp)
+![Labeled Brick Examples](https://migueldilalla.github.io/assets/own-projects-resources/readme_dataset_samples/bricks/output_grid_7.webp)
 
 ---
 
@@ -77,15 +77,16 @@ Each cropped brick image is relabeled with visible **stud positions**:
 - Transformed into **bounding boxes**
 - Converted to **YOLO keypoint format** using helper scripts
 
-> 🔧 Conversion tools available in `utils/label_conversion.py`
-> 📦 **[Download Stud Dataset from Kaggle](#TODO)**
+> 🔧 Conversion tools available soon.
+
+> 📦 **[Download Stud Dataset from Kaggle](https://www.kaggle.com/datasets/migueldilalla/labeledstuds-lego-bricks)**
 
 ### 📷 Example Grid (Cropped Brick + Stud Annotations)
 > *(Images will load from `assets/dataset_studs/` folder)*
 
-```
-![Grid Placeholder - Stud Detection Examples](#TODO)
-```
+
+![labeled StudHeads Examples](https://migueldilalla.github.io//assets/own-projects-resources/readme_dataset_samples/studs/output_grid_10.webp)
+
 
 ---
 
@@ -112,8 +113,9 @@ All models were trained on **Kaggle Notebooks**, using Ultralytics YOLOv8 (`yolo
 - 📄 Single-class brick detection model
 - 📄 Stud detection model
 
-> 🔗 **[Kaggle Notebook: Brick Detection Finetuning](#TODO)**
-> 🔗 **[Kaggle Notebook: Stud Detection Finetuning](#TODO)**
+> 🔗 **[Kaggle Notebook: Brick Detection Finetuning](https://www.kaggle.com/code/migueldilalla/brickssifier-studwise-project-models-trainer/edit)**
+
+> 🔗 **[Kaggle Notebook: Stud Detection Finetuning](https://www.kaggle.com/code/migueldilalla/brickssifier-studwise-project-models-trainer/edit)**
 
 ---
 
@@ -124,7 +126,7 @@ You can test the full pipeline interactively on the web. Upload an image, get th
 - 🔧 Built with Streamlit + OpenCV + EXIF
 - ⚙️ Includes a metadata fingerprint per inference
 
-> 🌐 **[Try the App on Streamlit](#TODO)**
+> 🌐 **[Try the App on Streamlit](https://migueldilalla-lego-classify.streamlit.app/)**
 
 ---
 
