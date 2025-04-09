@@ -152,7 +152,7 @@ You can test the full pipeline interactively on the web. Upload an image, get th
 
 🔗 [My Portfolio](https://migueldilalla.github.io/)  
 💼 [My LinkedIn](https://www.linkedin.com/in/MiguelDiLalla/)  
-📦 [Project Repository](https://github.com/MiguelDiLalla/LEGO_Bricks_ML_Vision)
+📦 [Project Repository](https://github.com/MiguelDiLalla/Brickssifier_Studwise)
 
 ---
 
