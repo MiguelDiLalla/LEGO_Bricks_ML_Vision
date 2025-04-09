@@ -33,6 +33,26 @@ By contrast, Brickssifier is a personal engineering exercise: built from scratch
 
 After failing to train a reliable multiclass classifier, I narrowed my goal to a **reduced set of 14 basic brick classes**, and restructured the task into a pipeline of modular steps.
 
+### 📊 Supported Brick Classes
+
+The system currently classifies the following LEGO brick dimensions:
+
+```python
+STUDS_TO_DIMENSIONS_MAP = {
+        1: "1x1",
+        2: "2x1",
+        3: "3x1",
+        4: ["2x2", "4x1"],
+        6: ["3x2", "6x1"],
+        8: ["4x2", "8x1"],
+        10: "10x1",
+        12: ["6x2", "12x1"],
+        16: ["4x4", "8x2"]
+    }
+```
+
+This mapping shows how stud count alone isn't enough for classification (e.g., 4 studs could be 1x4, 2x2, or 4x1), necessitating the geometric approach.
+
 ### 🚀 Brick Dimension Classification Pipeline
 ```python
 1. Detect LEGO bricks in an image with YOLOv8 (model 1)
